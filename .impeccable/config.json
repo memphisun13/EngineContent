@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "space grotesk",
+        "createdAt": "2026-10-15T10:10:38.130Z",
+        "reason": "brand-pinned: designer's brandbook names Space Grotesk as the main font (PRODUCT.md Brand Commitments)"
+      }
+    ]
+  }
+}
