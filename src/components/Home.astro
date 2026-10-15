@@ -66,23 +66,18 @@ const strings = {
 
   <main>
     <section class="hero" aria-labelledby="hero-title">
-      <div class="wrap hero-grid">
+      <div class="hero-grid">
         <div class="hero-copy">
           <h1 id="hero-title" class="hero-title">
             <span class="only-day">{t.hero.day[0]} <em>{t.hero.day[1]}</em></span>
             <span class="only-evening">{t.hero.evening[0]} <em>{t.hero.evening[1]}</em></span>
           </h1>
           <p class="hero-lead">{t.hero.lead}</p>
-        </div>
-
-        <div class="towers" aria-hidden="true">
-          <span></span><span></span><span></span>
-        </div>
 
         <form class="quick" id="quick" novalidate>
           <h2 class="quick-title">{t.quick.title}</h2>
-          <div class="cells">
-            <label class="cell cell-wide">
+          <div class="cells cells-quick">
+            <label class="cell">
               <span class="cell-label">{t.quick.date}</span>
               <input type="date" id="quick-date" name="date" />
             </label>
@@ -99,11 +94,19 @@ const strings = {
               </select>
             </label>
           </div>
-          <button class="btn btn-block" type="submit">
+          <button class="btn quick-btn" type="submit">
             {t.quick.next}
             <svg class="arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h13M11 5l5 5-5 5" /></svg>
           </button>
         </form>
+        </div>
+
+        <figure class="hero-photo">
+          <img src="/img/tundra-tall.jpg" alt="" width="370" height="904" />
+          <div class="towers" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+        </figure>
       </div>
     </section>
 
@@ -163,6 +166,7 @@ const strings = {
           <h2 class="section-title" id="booking-title">{t.booking.title}</h2>
           <p class="booking-text">{t.booking.text}</p>
           <p class="booking-demo">{t.booking.demo}</p>
+          <img class="booking-photo" src="/img/tundra-berries.jpg" alt="" width="300" height="300" loading="lazy" />
         </div>
 
         <div class="booking-panel">
@@ -389,9 +393,10 @@ const strings = {
     --accent-hover: #34528A;
     --accent-ink: #34528A;
     --on-accent: #F4F2EF;
-    --band: #7D8C6F;
-    --on-band: #16191B;
-    --band-line: rgba(22, 25, 27, 0.55);
+    --band: #4467A6;
+    --on-band: #F4F2EF;
+    --band-line: rgba(244, 242, 239, 0.55);
+    --date: #6E4C2E;
     --error: #A3322A;
     --foot: #231F20;
     --on-foot: #F4F2EF;
@@ -426,9 +431,10 @@ const strings = {
       --accent-hover: #B7C9E8;
       --accent-ink: #9DB4DE;
       --on-accent: #231F20;
-      --band: #4A5541;
+      --band: #2F4A7E;
       --on-band: #F4F2EF;
-      --band-line: rgba(244, 242, 239, 0.4);
+      --band-line: rgba(244, 242, 239, 0.45);
+      --date: #C9A27C;
       --error: #F0A59B;
       --logo-script: #9DB4DE;
       color-scheme: dark;
@@ -446,9 +452,10 @@ const strings = {
     --accent-hover: #B7C9E8;
     --accent-ink: #9DB4DE;
     --on-accent: #231F20;
-    --band: #4A5541;
+    --band: #2F4A7E;
     --on-band: #F4F2EF;
-    --band-line: rgba(244, 242, 239, 0.4);
+    --band-line: rgba(244, 242, 239, 0.45);
+    --date: #C9A27C;
     --error: #F0A59B;
     --logo-script: #9DB4DE;
     color-scheme: dark;
@@ -572,15 +579,21 @@ const strings = {
   .langs a[aria-current="page"] { color: var(--ink); text-decoration: underline; text-underline-offset: 6px; }
 
   /* ---------- Hero ---------- */
-  .hero { border-bottom: 1px solid var(--line); overflow: hidden; }
+  .hero { border-bottom: 1px solid var(--line); }
   .hero-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 132px minmax(300px, 380px);
-    gap: 0 clamp(16px, 3vw, 48px);
-    align-items: end;
-    padding-top: clamp(56px, 9vw, 120px);
+    grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+    min-height: min(78vh, 760px);
   }
-  .hero-copy { display: grid; gap: clamp(24px, 3vw, 40px); padding-bottom: clamp(48px, 7vw, 96px); min-width: 0; }
+  .hero-copy {
+    display: grid;
+    gap: clamp(24px, 3vw, 36px);
+    align-content: center;
+    min-width: 0;
+    padding-block: clamp(56px, 8vw, 104px);
+    padding-left: max(var(--gutter), calc((100vw - 1240px) / 2));
+    padding-right: clamp(24px, 4vw, 64px);
+  }
   .hero-title { font-size: var(--t-h1); line-height: 0.98; letter-spacing: -0.035em; font-weight: 400; }
   .hero-title span { display: block; }
   .hero-title em {
@@ -595,22 +608,21 @@ const strings = {
     color: var(--accent-ink);
     padding-left: 0.6em;
   }
-  .hero-lead { max-width: 44ch; font-size: 1.0625rem; color: var(--muted); }
+  .hero-lead { max-width: 46ch; font-size: 1.0625rem; color: var(--muted); }
 
-  .towers { align-self: stretch; display: flex; align-items: flex-end; justify-content: center; }
-  .towers span { display: block; border: 1px solid var(--line); border-bottom: 0; }
-  .towers span:nth-child(1) { width: 34px; height: 58%; }
-  .towers span:nth-child(2) { width: 40px; height: 92%; margin-inline: -1px; position: relative; }
-  .towers span:nth-child(2)::after { content: ''; position: absolute; left: 50%; top: 18px; bottom: 0; border-left: 1px solid var(--line); }
-  .towers span:nth-child(3) { width: 34px; height: 46%; }
+  .hero-photo { position: relative; margin: 0; border-left: 1px solid var(--line); overflow: hidden; background: #1d2326; }
+  .hero-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .towers { position: absolute; left: clamp(24px, 4vw, 48px); bottom: 0; height: 62%; display: flex; align-items: flex-end; color: #F4F2EF; }
+  .towers span { display: block; border: 1.5px solid currentColor; border-bottom: 0; }
+  .towers span:nth-child(1) { width: 30px; height: 58%; }
+  .towers span:nth-child(2) { width: 36px; height: 100%; margin-inline: -1.5px; position: relative; }
+  .towers span:nth-child(2)::after { content: ''; position: absolute; left: 50%; top: 16px; bottom: 0; border-left: 1.5px solid currentColor; }
+  .towers span:nth-child(3) { width: 30px; height: 44%; }
 
-  .quick {
-    align-self: end;
-    margin-bottom: clamp(32px, 5vw, 64px);
-    border: 1px solid var(--line);
-    background: var(--surface);
-  }
-  .quick-title { padding: 18px 20px; font-size: var(--t-h3); letter-spacing: -0.01em; border-bottom: 1px solid var(--line); }
+  .quick { display: grid; grid-template-columns: minmax(0, 1fr) auto; border: 1px solid var(--line); background: var(--surface); max-width: 640px; }
+  .quick-title { grid-column: 1 / -1; padding: 14px 20px; font: 500 0.8125rem/1.2 var(--f-display); letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 1px solid var(--line); }
+  .quick .cells-quick { grid-template-columns: 1.4fr 1fr 0.8fr; border-bottom: 0; }
+  .quick-btn { min-height: 100%; padding-inline: 28px; }
 
   /* Framed cells: collapsed 1px borders, like the logo's letter boxes */
   .cells { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border-bottom: 1px solid var(--line); }
@@ -653,14 +665,14 @@ const strings = {
     gap: 16px;
     align-content: start;
     padding: clamp(24px, 4vw, 48px);
-    background: var(--bg);
-    transition: background-color 300ms ease;
+    --h-ink: #16191B; --h-muted: #5E6468; --h-accent: #34528A;
+    background: #F4F2EF;
+    color: var(--h-ink);
   }
-  .half.is-active { background: var(--surface); }
-  .half-name { font-size: clamp(3.5rem, 9vw, 7.5rem); line-height: 0.9; letter-spacing: -0.05em; font-weight: 300; }
-  .half.is-active .half-name { color: var(--accent-ink); }
+  .half[data-half="dark"] { --h-ink: #F4F2EF; --h-muted: #B9BEC1; --h-accent: #9DB4DE; background: #363F45; }
+  .half-name { font-size: clamp(3.5rem, 9vw, 7.5rem); line-height: 0.9; letter-spacing: -0.05em; font-weight: 300; color: var(--h-accent); }
   .half-items { font: 500 1.375rem/1.3 var(--f-display); letter-spacing: -0.01em; }
-  .half-text { max-width: 34ch; color: var(--muted); }
+  .half-text { max-width: 34ch; color: var(--h-muted); }
   .half-switch {
     justify-self: start;
     margin-top: 8px;
@@ -668,12 +680,12 @@ const strings = {
     border: 0;
     border-bottom: 1px solid currentColor;
     background: none;
-    color: var(--ink);
+    color: var(--h-ink);
     font: 500 0.8125rem/1 var(--f-display);
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
-  .half-switch:hover { color: var(--accent-ink); }
+  .half-switch:hover { color: var(--h-accent); }
   .half.is-active .half-switch { visibility: hidden; }
   .pending { margin-top: 16px; font-size: var(--t-small); color: var(--muted); }
 
@@ -690,7 +702,7 @@ const strings = {
   }
   .event:last-child { border-bottom-color: var(--line); }
   .event-date { display: flex; align-items: center; gap: 14px; }
-  .event-day { font: 300 3.5rem/0.9 var(--f-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; min-width: 2ch; }
+  .event-day { color: var(--date); font: 300 3.5rem/0.9 var(--f-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; min-width: 2ch; }
   .event-month { font: 500 0.75rem/1.35 var(--f-display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
   .event-body { display: grid; gap: 6px; min-width: 0; }
   .event-title { font-size: var(--t-h3); line-height: 1.2; letter-spacing: -0.01em; font-weight: 500; }
@@ -703,6 +715,9 @@ const strings = {
   .booking-intro { display: grid; gap: 20px; }
   .booking-text { max-width: 36ch; font-size: 1.125rem; line-height: 1.55; }
   .booking-demo { justify-self: start; padding: 8px 12px; border: 1px solid var(--band-line); font: 500 0.8125rem/1.3 var(--f-display); letter-spacing: 0.02em; }
+  .booking-photo { width: min(100%, 300px); aspect-ratio: 1; object-fit: cover; border: 1px solid var(--band-line); margin-top: 12px; }
+  .booking-panel .btn { background: #231F20; color: #F4F2EF; }
+  .booking-panel .btn:hover { background: #363F45; }
   .booking-panel { border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
   .stepper-cell { grid-template-columns: 1fr auto; align-items: center; }
   .stepper { display: flex; align-items: center; border: 1px solid var(--line); }
@@ -753,10 +768,11 @@ const strings = {
   }
 
   @media (max-width: 860px) {
-    .hero-grid { grid-template-columns: minmax(0, 1fr) 96px; }
-    .quick { grid-column: 1 / -1; margin-bottom: 40px; }
-    .hero-copy { padding-bottom: 32px; }
-    .towers { grid-row: 1; grid-column: 2; transform: scale(0.8); transform-origin: bottom center; }
+    .hero-grid { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+    .hero-copy { padding-left: var(--gutter); padding-right: var(--gutter-r); padding-block: 48px; }
+    .hero-photo { order: -1; height: 280px; border-left: 0; border-bottom: 1px solid var(--line); }
+    .hero-photo img { object-position: center 70%; }
+    .towers { height: 78%; }
     .booking-grid { grid-template-columns: minmax(0, 1fr); }
     .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .header-cta { display: none; }
@@ -768,8 +784,11 @@ const strings = {
     .header-tools { gap: 6px; }
     .mode .mode-btn { padding: 0 10px; }
     .langs a { padding: 8px 4px; }
-    .hero-grid { grid-template-columns: minmax(0, 1fr); padding-top: 40px; }
-    .towers { display: none; }
+    .hero-photo { height: 220px; }
+    .quick { grid-template-columns: minmax(0, 1fr); }
+    .quick .cells-quick { grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); }
+    .quick .cells-quick .cell:first-child { grid-column: 1 / -1; }
+    .quick-btn { min-height: 52px; justify-content: space-between; }
     .halves { grid-template-columns: minmax(0, 1fr); }
     .half.is-active .half-switch { display: none; }
     .event { grid-template-columns: minmax(0, 1fr) auto; padding-block: 24px; }
