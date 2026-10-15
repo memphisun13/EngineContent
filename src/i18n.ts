@@ -27,7 +27,9 @@ export type Dict = {
     switchTo: string;
     pending: string;
   };
-  program: { title: string; sample: string; reserve: string; events: EventItem[] };
+  program: { title: string; lead: string; sample: string; reserve: string; prev: string; next: string; events: EventItem[] };
+  marquee: string[];
+  feature: { lead: string; now: string };
   booking: {
     title: string;
     text: string;
@@ -86,13 +88,20 @@ export const dict: Record<Lang, Dict> = {
     program: {
       title: 'Program večerů',
       sample: 'Ukázkový program. Skutečné akce doplníme.',
+      lead: 'Večery s dezerty, koktejly a hosty.',
+      prev: 'Předchozí akce',
+      next: 'Další akce',
       reserve: 'Rezervovat místo',
       events: [
         { date: '2026-10-24', title: 'Večer klasických koktejlů', text: 'Známé recepty v nových variacích, k tomu malé dezerty.', time: '19:00' },
         { date: '2026-11-07', title: 'Degustace dezertů', text: 'Pět malých dezertů a povídání o tom, jak vznikají.', time: '16:00' },
         { date: '2026-11-21', title: 'Borůvkový večer', text: 'Dezerty a koktejly s borůvkou, barvou našeho loga.', time: '19:00' },
+        { date: '2026-12-05', title: 'Mikulášské dezerty', text: 'Sezónní dezerty a horká čokoláda pro malé i velké.', time: '15:00' },
+        { date: '2026-12-19', title: 'Zimní koktejly', text: 'Teplé i ledové koktejly na dlouhé zimní večery.', time: '19:00' },
       ],
     },
+    marquee: ['Káva od rána', 'Dezerty celý den', 'Koktejly večer', 'Rezervace bez volání', 'Česky · English · Українська'],
+    feature: { lead: 'Jedno místo, dvě nálady. Přepněte stránku a podívejte se.', now: 'Teď na stránce' },
     booking: {
       title: 'Rezervace stolu',
       text: 'Vyplňte formulář. Ozveme se e-mailem nebo zprávou a rezervaci potvrdíme.',
@@ -149,13 +158,20 @@ export const dict: Record<Lang, Dict> = {
     program: {
       title: 'Evening events',
       sample: 'Sample programme. Real events coming soon.',
+      lead: 'Evenings of desserts, cocktails and guests.',
+      prev: 'Previous event',
+      next: 'Next event',
       reserve: 'Reserve a seat',
       events: [
         { date: '2026-10-24', title: 'Classic cocktail night', text: 'Well-known recipes in new variations, with small desserts.', time: '19:00' },
         { date: '2026-11-07', title: 'Dessert tasting', text: 'Five small desserts and a talk about how they are made.', time: '16:00' },
         { date: '2026-11-21', title: 'Blueberry night', text: 'Desserts and cocktails with blueberry, the colour of our logo.', time: '19:00' },
+        { date: '2026-12-05', title: 'St Nicholas desserts', text: 'Seasonal desserts and hot chocolate for kids and grown-ups.', time: '15:00' },
+        { date: '2026-12-19', title: 'Winter cocktails', text: 'Warm and iced cocktails for long winter evenings.', time: '19:00' },
       ],
     },
+    marquee: ['Coffee from the morning', 'Desserts all day', 'Cocktails in the evening', 'Book without calling', 'Česky · English · Українська'],
+    feature: { lead: 'One place, two moods. Switch the page and see.', now: 'On the page now' },
     booking: {
       title: 'Book a table',
       text: 'Fill in the form. We will reply by email or message and confirm your booking.',
@@ -212,13 +228,20 @@ export const dict: Record<Lang, Dict> = {
     program: {
       title: 'Програма вечорів',
       sample: 'Приклад програми. Справжні події додамо згодом.',
+      lead: 'Вечори з десертами, коктейлями та гостями.',
+      prev: 'Попередня подія',
+      next: 'Наступна подія',
       reserve: 'Забронювати місце',
       events: [
         { date: '2026-10-24', title: 'Вечір класичних коктейлів', text: 'Відомі рецепти в нових варіаціях і маленькі десерти до них.', time: '19:00' },
         { date: '2026-11-07', title: 'Дегустація десертів', text: "П'ять маленьких десертів і розповідь про те, як вони з'являються.", time: '16:00' },
         { date: '2026-11-21', title: 'Чорничний вечір', text: 'Десерти та коктейлі з чорницею, кольором нашого логотипа.', time: '19:00' },
+        { date: '2026-12-05', title: 'Десерти до Миколая', text: 'Сезонні десерти та гарячий шоколад для малих і дорослих.', time: '15:00' },
+        { date: '2026-12-19', title: 'Зимові коктейлі', text: 'Теплі й крижані коктейлі для довгих зимових вечорів.', time: '19:00' },
       ],
     },
+    marquee: ['Кава з самого ранку', 'Десерти весь день', 'Коктейлі ввечері', 'Бронювання без дзвінків', 'Česky · English · Українська'],
+    feature: { lead: 'Одне місце, два настрої. Перемкніть сторінку й подивіться.', now: 'Зараз на сторінці' },
     booking: {
       title: 'Бронювання столу',
       text: 'Заповніть форму. Ми відповімо листом або повідомленням і підтвердимо бронювання.',
