@@ -1,0 +1,29 @@
+---
+// Redrawn from the designer's raster logo until the original SVG arrives.
+interface Props { class?: string; title?: string }
+const { class: className, title = 'ANSO Café' } = Astro.props;
+---
+<svg class:list={['logo', className]} viewBox="0 0 300 160" role="img" aria-label={title}>
+  <g class="logo-line" fill="none" stroke="currentColor" stroke-width="2">
+    <rect x="125" y="40" width="16" height="114" />
+    <rect x="141" y="8" width="18" height="146" />
+    <line x1="150" y1="20" x2="150" y2="154" />
+    <rect x="159" y="56" width="16" height="98" />
+    <rect x="6" y="108" width="58" height="46" />
+    <rect x="64" y="108" width="61" height="46" />
+    <rect x="175" y="108" width="58" height="46" />
+    <rect x="233" y="108" width="61" height="46" />
+  </g>
+  <g class="logo-letters" fill="currentColor" font-family="'Space Grotesk', system-ui, sans-serif" font-weight="300" font-size="40" text-anchor="middle">
+    <text x="35" y="145">A</text>
+    <text x="94.5" y="145">N</text>
+    <text x="204" y="145">S</text>
+    <text x="263.5" y="145">O</text>
+  </g>
+  <text class="logo-script" x="196" y="82" text-anchor="middle" font-family="'Cormorant Garamond', Georgia, serif" font-style="italic" font-size="58" transform="rotate(-14 196 70)">Café</text>
+</svg>
+
+<style>
+  .logo { display: block; height: auto; overflow: visible; }
+  .logo-script { fill: var(--logo-script, currentColor); }
+</style>
