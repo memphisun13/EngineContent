@@ -101,12 +101,9 @@ const strings = {
         </form>
         </div>
 
-        <figure class="hero-photo">
-          <img src="/img/tundra-tall.jpg" alt="" width="370" height="904" />
-          <div class="towers" aria-hidden="true">
-            <span></span><span></span><span></span>
-          </div>
-        </figure>
+        <div class="hero-mark" aria-hidden="true">
+          <Logo class="hero-logo" />
+        </div>
       </div>
     </section>
 
@@ -166,7 +163,6 @@ const strings = {
           <h2 class="section-title" id="booking-title">{t.booking.title}</h2>
           <p class="booking-text">{t.booking.text}</p>
           <p class="booking-demo">{t.booking.demo}</p>
-          <img class="booking-photo" src="/img/tundra-berries.jpg" alt="" width="300" height="300" loading="lazy" />
         </div>
 
         <div class="booking-panel">
@@ -405,7 +401,7 @@ const strings = {
 
     --f-display: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
     --f-accent: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
-    --f-body: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+    --f-body: 'Manrope', 'Helvetica Neue', Arial, sans-serif;
 
     --t-h1: clamp(2.6rem, 6.4vw, 5.75rem);
     --t-h2: clamp(2rem, 4.2vw, 3.25rem);
@@ -415,7 +411,7 @@ const strings = {
 
     --gutter: max(clamp(16px, 5vw, 64px), env(safe-area-inset-left, 0px));
     --gutter-r: max(clamp(16px, 5vw, 64px), env(safe-area-inset-right, 0px));
-    --section-y: clamp(72px, 10vw, 136px);
+    --section-y: clamp(56px, 7vw, 96px);
     color-scheme: light;
   }
 
@@ -517,7 +513,7 @@ const strings = {
     border: 0;
     background: var(--accent);
     color: var(--on-accent);
-    font: 500 0.875rem/1 var(--f-display);
+    font: 600 0.8125rem/1 var(--f-body);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     text-decoration: none;
@@ -538,7 +534,7 @@ const strings = {
     border: 0;
     background: none;
     color: var(--accent-ink);
-    font: 500 0.875rem/1.3 var(--f-display);
+    font: 500 0.875rem/1.3 var(--f-body);
     letter-spacing: 0.04em;
     text-align: left;
   }
@@ -555,7 +551,7 @@ const strings = {
   .header-row { display: flex; align-items: center; gap: 24px; min-height: 76px; }
   .brand { color: var(--ink); flex: none; }
   .brand-logo { width: 96px; }
-  .nav { display: flex; gap: 28px; margin-inline: auto; font: 400 0.875rem/1 var(--f-display); letter-spacing: 0.02em; }
+  .nav { display: flex; gap: 28px; margin-inline: auto; font: 400 0.875rem/1 var(--f-body); letter-spacing: 0.02em; }
   .nav a { text-decoration: none; padding-block: 8px; border-bottom: 1px solid transparent; }
   .nav a:hover { border-bottom-color: currentColor; }
   .header-tools { display: flex; align-items: center; gap: 16px; }
@@ -566,14 +562,14 @@ const strings = {
     padding: 0 14px;
     border: 0;
     background: transparent;
-    font: 500 0.75rem/1 var(--f-display);
+    font: 500 0.75rem/1 var(--f-body);
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
   .mode .mode-btn + .mode-btn { border-left: 1px solid var(--line); }
   .mode .mode-btn[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
 
-  .langs { display: flex; gap: 2px; margin: 0; padding: 0; list-style: none; font: 500 0.75rem/1 var(--f-display); letter-spacing: 0.08em; }
+  .langs { display: flex; gap: 2px; margin: 0; padding: 0; list-style: none; font: 500 0.75rem/1 var(--f-body); letter-spacing: 0.08em; }
   .langs a { display: inline-block; padding: 8px 6px; text-decoration: none; color: var(--muted); }
   .langs a:hover { color: var(--ink); }
   .langs a[aria-current="page"] { color: var(--ink); text-decoration: underline; text-underline-offset: 6px; }
@@ -583,7 +579,7 @@ const strings = {
   .hero-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
-    min-height: min(78vh, 760px);
+    min-height: clamp(520px, 64vh, 640px);
   }
   .hero-copy {
     display: grid;
@@ -610,17 +606,20 @@ const strings = {
   }
   .hero-lead { max-width: 46ch; font-size: 1.0625rem; color: var(--muted); }
 
-  .hero-photo { position: relative; margin: 0; border-left: 1px solid var(--line); overflow: hidden; background: #1d2326; }
-  .hero-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .towers { position: absolute; left: clamp(24px, 4vw, 48px); bottom: 0; height: 62%; display: flex; align-items: flex-end; color: #F4F2EF; }
-  .towers span { display: block; border: 1.5px solid currentColor; border-bottom: 0; }
-  .towers span:nth-child(1) { width: 30px; height: 58%; }
-  .towers span:nth-child(2) { width: 36px; height: 100%; margin-inline: -1.5px; position: relative; }
-  .towers span:nth-child(2)::after { content: ''; position: absolute; left: 50%; top: 16px; bottom: 0; border-left: 1.5px solid currentColor; }
-  .towers span:nth-child(3) { width: 30px; height: 44%; }
+  .hero-mark {
+    display: grid;
+    place-items: center;
+    padding: clamp(32px, 5vw, 72px);
+    border-left: 1px solid var(--line);
+    background: var(--band);
+    color: #F4F2EF;
+    --logo-script: #F4F2EF;
+  }
+  .hero-logo { width: min(100%, 540px); }
+  .hero-logo .logo-line { stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
 
   .quick { display: grid; grid-template-columns: minmax(0, 1fr) auto; border: 1px solid var(--line); background: var(--surface); max-width: 640px; }
-  .quick-title { grid-column: 1 / -1; padding: 14px 20px; font: 500 0.8125rem/1.2 var(--f-display); letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 1px solid var(--line); }
+  .quick-title { grid-column: 1 / -1; padding: 14px 20px; font: 500 0.8125rem/1.2 var(--f-body); letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 1px solid var(--line); }
   .quick .cells-quick { grid-template-columns: 1.4fr 1fr 0.8fr; border-bottom: 0; }
   .quick-btn { min-height: 100%; padding-inline: 28px; }
 
@@ -629,7 +628,7 @@ const strings = {
   .cell { display: grid; gap: 4px; align-content: start; padding: 12px 20px 14px; background: var(--surface); min-width: 0; }
   .cell-wide { grid-column: 1 / -1; }
   .cell:focus-within { outline: 2px solid var(--accent-ink); outline-offset: -2px; }
-  .cell-label { font: 500 0.75rem/1.2 var(--f-display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .cell-label { font: 500 0.75rem/1.2 var(--f-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
   .cell input, .cell select, .cell textarea {
     width: 100%;
     min-width: 0;
@@ -681,7 +680,7 @@ const strings = {
     border-bottom: 1px solid currentColor;
     background: none;
     color: var(--h-ink);
-    font: 500 0.8125rem/1 var(--f-display);
+    font: 500 0.8125rem/1 var(--f-body);
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
@@ -703,7 +702,7 @@ const strings = {
   .event:last-child { border-bottom-color: var(--line); }
   .event-date { display: flex; align-items: center; gap: 14px; }
   .event-day { color: var(--date); font: 300 3.5rem/0.9 var(--f-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; min-width: 2ch; }
-  .event-month { font: 500 0.75rem/1.35 var(--f-display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .event-month { font: 500 0.75rem/1.35 var(--f-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
   .event-body { display: grid; gap: 6px; min-width: 0; }
   .event-title { font-size: var(--t-h3); line-height: 1.2; letter-spacing: -0.01em; font-weight: 500; }
   .event-text { color: var(--muted); max-width: 52ch; }
@@ -714,8 +713,7 @@ const strings = {
   .booking-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 40px clamp(32px, 6vw, 96px); align-items: start; }
   .booking-intro { display: grid; gap: 20px; }
   .booking-text { max-width: 36ch; font-size: 1.125rem; line-height: 1.55; }
-  .booking-demo { justify-self: start; padding: 8px 12px; border: 1px solid var(--band-line); font: 500 0.8125rem/1.3 var(--f-display); letter-spacing: 0.02em; }
-  .booking-photo { width: min(100%, 300px); aspect-ratio: 1; object-fit: cover; border: 1px solid var(--band-line); margin-top: 12px; }
+  .booking-demo { justify-self: start; padding: 8px 12px; border: 1px solid var(--band-line); font: 500 0.8125rem/1.3 var(--f-body); letter-spacing: 0.02em; }
   .booking-panel .btn { background: #231F20; color: #F4F2EF; }
   .booking-panel .btn:hover { background: #363F45; }
   .booking-panel { border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
@@ -744,7 +742,7 @@ const strings = {
     border: 1px solid var(--line);
   }
   .fact { display: grid; gap: 28px; padding: 24px; background: var(--bg); }
-  .fact dt { font: 500 0.75rem/1.2 var(--f-display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .fact dt { font: 500 0.75rem/1.2 var(--f-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
   .fact dd { margin: 0; font: 300 1.5rem/1.2 var(--f-display); letter-spacing: -0.01em; }
 
   /* ---------- Footer ---------- */
@@ -770,9 +768,8 @@ const strings = {
   @media (max-width: 860px) {
     .hero-grid { grid-template-columns: minmax(0, 1fr); min-height: 0; }
     .hero-copy { padding-left: var(--gutter); padding-right: var(--gutter-r); padding-block: 48px; }
-    .hero-photo { order: -1; height: 280px; border-left: 0; border-bottom: 1px solid var(--line); }
-    .hero-photo img { object-position: center 70%; }
-    .towers { height: 78%; }
+    .hero-mark { order: -1; border-left: 0; border-bottom: 1px solid var(--line); padding-block: 40px; }
+    .hero-logo { width: min(80%, 360px); }
     .booking-grid { grid-template-columns: minmax(0, 1fr); }
     .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .header-cta { display: none; }
@@ -784,7 +781,6 @@ const strings = {
     .header-tools { gap: 6px; }
     .mode .mode-btn { padding: 0 10px; }
     .langs a { padding: 8px 4px; }
-    .hero-photo { height: 220px; }
     .quick { grid-template-columns: minmax(0, 1fr); }
     .quick .cells-quick { grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); }
     .quick .cells-quick .cell:first-child { grid-column: 1 / -1; }
