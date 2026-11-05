@@ -1,0 +1,852 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Контакт-парсер</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%2350e3c2%22/%3E%3Cg fill=%22none%22 stroke=%22%23113%22 stroke-width=%222.6%22 stroke-linecap=%22round%22%3E%3Ccircle cx=%229%22 cy=%2210%22 r=%222.4%22/%3E%3Ccircle cx=%229%22 cy=%2222%22 r=%222.4%22/%3E%3Cpath d=%22M12 10h3a3 3 0 0 1 3 3v6a3 3 0 0 0 3 3h3M12 22h3%22/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: oklch(0.15 0.012 255);
+  --panel: oklch(0.185 0.014 255);
+  --panel-2: oklch(0.215 0.016 255);
+  --panel-3: oklch(0.25 0.018 255);
+  --line: oklch(0.28 0.018 255);
+  --line-soft: oklch(0.235 0.016 255);
+  --text: oklch(0.95 0.008 255);
+  --muted: oklch(0.74 0.02 255);
+  --faint: oklch(0.64 0.02 255);
+  --accent: oklch(0.85 0.14 172);
+  --accent-ink: oklch(0.2 0.04 172);
+  --accent-soft: oklch(0.85 0.14 172 / 0.12);
+  --ok: oklch(0.8 0.15 150);
+  --ok-soft: oklch(0.8 0.15 150 / 0.13);
+  --warn: oklch(0.85 0.14 82);
+  --warn-soft: oklch(0.85 0.14 82 / 0.13);
+  --err: oklch(0.72 0.17 25);
+  --err-soft: oklch(0.72 0.17 25 / 0.14);
+  --li: oklch(0.76 0.12 245);
+  --li-soft: oklch(0.76 0.12 245 / 0.14);
+  --dou: oklch(0.78 0.12 305);
+  --dou-soft: oklch(0.78 0.12 305 / 0.14);
+  --sans: "Onest", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --r: 10px;
+  --shadow: 0 1px 0 oklch(1 0 0 / 0.03) inset, 0 12px 32px -18px oklch(0 0 0 / 0.7);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  caret-color: var(--accent);
+}
+::selection { background: oklch(0.85 0.14 172 / 0.3); color: var(--text); }
+* { scrollbar-width: thin; scrollbar-color: var(--panel-3) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--panel-3); border-radius: 10px; border: 3px solid transparent; background-clip: padding-box; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+a { color: inherit; text-underline-offset: 3px; }
+svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+[hidden] { display: none !important; }
+
+/* ---------- top bar ---------- */
+.top {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 24px; border-bottom: 1px solid var(--line-soft);
+  background: oklch(0.165 0.013 255);
+  position: sticky; top: 0; z-index: 5;
+}
+.brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.mark { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center;
+        background: var(--accent); color: var(--accent-ink); }
+.mark svg { width: 18px; height: 18px; stroke-width: 2; }
+.brand h1 { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+.brand p { margin: 0; color: var(--faint); font-size: 12px; }
+.top-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+.session {
+  display: flex; align-items: center; gap: 10px;
+  padding: 5px 6px 5px 12px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--panel); font-size: 13px;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; }
+.session[data-s="in"] .dot { background: var(--ok); box-shadow: 0 0 0 3px var(--ok-soft); }
+.session[data-s="out"] .dot { background: var(--err); box-shadow: 0 0 0 3px var(--err-soft); }
+.session[data-s="wait"] .dot { background: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); animation: pulse 1.4s ease-in-out infinite; }
+.session .sub { color: var(--faint); }
+@keyframes pulse { 50% { opacity: .35; } }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 38px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--panel-2); color: var(--text); font: 600 14px var(--sans);
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  transition: background .18s, border-color .18s, color .18s, opacity .18s;
+}
+.btn:hover:not(:disabled) { background: var(--panel-3); border-color: oklch(0.36 0.02 255); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn.sm { height: 28px; padding: 0 11px; font-size: 12.5px; border-radius: 999px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover:not(:disabled) { background: oklch(0.9 0.13 172); border-color: oklch(0.9 0.13 172); }
+.btn.danger { color: var(--err); border-color: oklch(0.72 0.17 25 / 0.45); background: transparent; }
+.btn.danger:hover:not(:disabled) { background: var(--err-soft); border-color: var(--err); }
+.btn.ghost { background: transparent; }
+.icon-btn { width: 38px; padding: 0; }
+
+/* ---------- alert ---------- */
+.alert {
+  margin: 16px 24px 0; padding: 12px 16px; border-radius: var(--r);
+  display: flex; gap: 12px; align-items: flex-start;
+  background: var(--err-soft); border: 1px solid oklch(0.72 0.17 25 / 0.4); color: var(--text);
+}
+.alert svg { color: var(--err); margin-top: 2px; }
+.alert b { display: block; margin-bottom: 2px; }
+.alert span { color: oklch(0.88 0.04 25); }
+.alert.info { background: var(--panel); border-color: var(--line); }
+.alert.info svg { color: var(--warn); }
+.alert.info span { color: var(--muted); }
+.alert .close { margin-left: auto; background: none; border: 0; color: var(--muted); cursor: pointer; padding: 2px; }
+
+/* ---------- layout ---------- */
+.grid {
+  display: grid; grid-template-columns: minmax(340px, 430px) minmax(0, 1fr);
+  gap: 16px; padding: 16px 24px 32px; align-items: start;
+}
+.panel {
+  background: var(--panel); border: 1px solid var(--line-soft); border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.panel-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px 0; }
+.panel-head h2 { font-size: 14px; font-weight: 600; margin: 0; letter-spacing: -0.005em; }
+.panel-head .aside { margin-left: auto; color: var(--faint); font-size: 12.5px; }
+.col { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; min-width: 0; }
+
+/* ---------- queue ---------- */
+.queue { position: sticky; top: 76px; display: flex; flex-direction: column; max-height: calc(100vh - 96px); }
+.input-wrap { padding: 12px 16px 0; }
+textarea {
+  width: 100%; min-height: 150px; max-height: 40vh; resize: vertical;
+  padding: 12px 13px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--text);
+  font: 12.5px/1.65 var(--mono); transition: border-color .18s;
+}
+textarea::placeholder { color: var(--faint); }
+textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+textarea:disabled { opacity: .55; }
+.summary { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 16px 0; min-height: 22px; }
+.tag {
+  display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px;
+  border-radius: 6px; font-size: 12px; font-weight: 500; background: var(--panel-2); color: var(--muted);
+}
+.tag.li { background: var(--li-soft); color: var(--li); }
+.tag.dou { background: var(--dou-soft); color: var(--dou); }
+.tag.bad { background: var(--err-soft); color: var(--err); }
+.src { font: 600 11px/1 var(--mono); letter-spacing: .02em; padding: 4px 7px; border-radius: 5px; flex: none; }
+.src.linkedin { background: var(--li-soft); color: var(--li); }
+.src.dou { background: var(--dou-soft); color: var(--dou); }
+.src.none { background: var(--err-soft); color: var(--err); }
+
+.links { list-style: none; margin: 10px 0 0; padding: 0 8px; overflow: auto; position: relative; flex: 1; min-height: 60px; }
+.link {
+  display: grid; grid-template-columns: 18px 1fr auto; gap: 10px; align-items: start;
+  padding: 9px 8px; border-radius: 8px; border-top: 1px solid var(--line-soft);
+}
+.link:first-child { border-top-color: transparent; }
+.link.running { background: var(--accent-soft); border-top-color: transparent; }
+.link.running + .link { border-top-color: transparent; }
+.link .st { margin-top: 1px; color: var(--faint); }
+.link.done .st { color: var(--ok); }
+.link.error .st, .link.bad .st { color: var(--err); }
+.link.running .st { color: var(--accent); }
+.link .body { min-width: 0; }
+.link .meta { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--muted); }
+.link .url { font: 12px/1.45 var(--mono); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 3px; }
+.link .why { font-size: 12.5px; color: var(--err); margin-top: 3px; }
+.link .res { font: 12px var(--mono); color: var(--muted); white-space: nowrap; margin-top: 1px; text-align: right; }
+.link .res b { color: var(--ok); font-weight: 500; }
+.spin { animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.empty-q { padding: 18px 16px 6px; color: var(--muted); font-size: 13px; }
+.empty-q p { margin: 0 0 10px; }
+.empty-q ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+.empty-q li { display: flex; gap: 8px; align-items: center; }
+.empty-q code { font: 12px var(--mono); color: var(--faint); }
+
+.actions { display: flex; gap: 10px; padding: 14px 16px 16px; border-top: 1px solid var(--line-soft); margin-top: 8px; }
+.actions .primary { flex: 1; }
+.hint { padding: 0 16px 14px; margin-top: -6px; color: var(--err); font-size: 13px; min-height: 0; }
+
+/* ---------- telemetry ---------- */
+.tele { padding: 18px 20px 20px; }
+.tele-top { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.state { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; margin: 0; display: flex; align-items: center; gap: 10px; }
+.state .dot { width: 10px; height: 10px; }
+.state[data-s="running"] .dot { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); animation: pulse 1.4s ease-in-out infinite; }
+.state[data-s="done"] .dot { background: var(--ok); }
+.state[data-s="stopped"] .dot { background: var(--err); }
+.times { margin-left: auto; display: flex; gap: 18px; color: var(--muted); font-size: 13px; }
+.times b { color: var(--text); font-weight: 500; }
+
+.bar { display: flex; gap: 3px; height: 8px; margin-top: 16px; }
+.seg { flex: 1; border-radius: 3px; background: var(--panel-3); transition: background .2s; min-width: 2px; }
+.seg.done { background: var(--ok); }
+.seg.error { background: var(--err); }
+.seg.skipped { background: oklch(0.4 0.02 255); }
+.seg.running { background: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+.bar.is-idle .seg { background: var(--panel-2); }
+.bar-cap { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12.5px; color: var(--muted); }
+
+.now {
+  margin-top: 16px; padding: 12px 14px; border-radius: 8px; background: var(--bg);
+  border: 1px solid var(--line-soft); display: grid; gap: 8px; min-height: 64px;
+}
+.now-row { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 13px; color: var(--muted); }
+.now-row .url { font: 12.5px var(--mono); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wait { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--warn); }
+.wait-track { flex: 1; height: 3px; border-radius: 3px; background: var(--panel-3); overflow: hidden; }
+.wait-fill { height: 100%; background: var(--warn); transform-origin: left; }
+
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 32px; margin-top: 6px; }
+.metric { padding: 14px 0 0; position: relative; }
+.metric + .metric::before { content: ""; position: absolute; left: -16px; top: 14px; bottom: 0; width: 1px; background: var(--line-soft); }
+.metric .v { font: 500 24px/1.1 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.metric .v small { font-size: 14px; color: var(--faint); }
+.metric .l { color: var(--muted); font-size: 12.5px; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+.metric.err .v.has { color: var(--err); }
+.meter { height: 4px; border-radius: 4px; background: var(--panel-3); margin-top: 9px; overflow: hidden; }
+.meter i { display: block; height: 100%; width: 0; background: var(--li); border-radius: 4px; transition: width .3s ease-out, background .3s; }
+.meter.hot i { background: var(--warn); }
+.meter.full i { background: var(--err); }
+
+/* ---------- tabs ---------- */
+.tabs-head { display: flex; align-items: center; gap: 4px; padding: 10px 12px 0; border-bottom: 1px solid var(--line-soft); }
+.tab {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 12px 11px;
+  background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  color: var(--muted); font: 600 13.5px var(--sans); cursor: pointer; transition: color .18s, border-color .18s;
+}
+.tab:hover { color: var(--text); }
+.tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+.tab .count { font: 500 11.5px var(--mono); padding: 2px 6px; border-radius: 5px; background: var(--panel-2); color: var(--muted); }
+.tabs-tools { margin-left: auto; display: flex; gap: 6px; padding-bottom: 6px; }
+.seg-ctl { display: inline-flex; padding: 3px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line-soft); }
+.seg-ctl button { border: 0; background: none; color: var(--muted); font: 600 12.5px var(--sans); padding: 5px 11px; border-radius: 6px; cursor: pointer; }
+.seg-ctl button[aria-pressed="true"] { background: var(--panel-3); color: var(--text); }
+.tab-body { height: 460px; overflow: auto; padding-bottom: 12px; }
+
+table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13px; }
+th { position: sticky; top: 0; z-index: 1; background: var(--panel); text-align: left; font-weight: 500; color: var(--faint);
+     font-size: 12px; padding: 10px 12px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+td { padding: 9px 12px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+td:first-child, th:first-child { padding-left: 18px; }
+td:last-child, th:last-child { padding-right: 18px; }
+tr.dup td { color: var(--faint); }
+tr.dup .name { color: var(--muted); }
+.name { font-weight: 500; color: var(--text); }
+.cell-sub { color: var(--muted); }
+.clip { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pill-new { font: 500 11px var(--mono); padding: 2px 6px; border-radius: 5px; background: var(--ok-soft); color: var(--ok); }
+.pill-dup { font: 500 11px var(--mono); padding: 2px 6px; border-radius: 5px; background: var(--panel-2); color: var(--faint); }
+.ext { color: var(--faint); display: inline-flex; }
+.ext:hover { color: var(--accent); }
+tr.fresh td { animation: fresh 2.4s cubic-bezier(.16, 1, .3, 1); }
+@keyframes fresh { from { background: oklch(0.85 0.14 172 / 0.16); } to { background: transparent; } }
+
+.log { margin: 0; padding: 14px 18px; font: 12px/1.7 var(--mono); white-space: pre-wrap; word-break: break-word; color: var(--muted); }
+.log .e { color: var(--err); }
+.log .ok { color: var(--ok); }
+.log .h { color: var(--text); }
+.log .w { color: var(--warn); }
+.log .t { color: var(--faint); }
+
+.empty { height: 100%; display: grid; place-content: center; justify-items: center; gap: 8px; padding: 40px 24px; text-align: center; color: var(--muted); }
+.empty svg { width: 28px; height: 28px; color: var(--faint); stroke-width: 1.4; }
+.empty b { color: var(--text); font-weight: 600; font-size: 14px; }
+.empty p { margin: 0; max-width: 42ch; font-size: 13px; }
+
+.res-ok { color: var(--ok); }
+.res-err { color: var(--err); }
+
+@media (max-width: 1000px) {
+  .grid { grid-template-columns: minmax(0, 1fr); padding: 16px; }
+  .queue { position: static; max-height: none; }
+  .links { max-height: 360px; }
+  .top { padding: 12px 16px; flex-wrap: wrap; }
+  .alert { margin: 16px 16px 0; }
+}
+@media (max-width: 640px) {
+  .brand p { display: none; }
+  .top-right { width: 100%; margin-left: 0; flex-wrap: wrap; }
+  .session { flex: 1 1 100%; min-width: 0; }
+  .session .txt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .session .sub { display: none; }
+  .top-right > .btn:last-child { flex: 1; }
+  .metrics { grid-template-columns: 1fr 1fr; }
+  .metric + .metric::before { display: none; }
+  .metrics { row-gap: 0; }
+  .metric:nth-child(n+3) { margin-top: 16px; }
+  .times { margin-left: 0; width: 100%; }
+  .tabs-head { flex-wrap: wrap; }
+  .tabs-tools { width: 100%; margin-left: 0; padding: 4px 0 8px; }
+  .tab-body { height: 420px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-play" viewBox="0 0 16 16"><path d="M5 3.5v9l7-4.5z"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 16 16"><rect x="4" y="4" width="8" height="8" rx="1.5"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 16 16"><path d="M9.5 3H13v3.5M13 3 7.5 8.5M11.5 9.5V12a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V5.5a1 1 0 0 1 1-1H7"/></symbol>
+  <symbol id="i-check" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="m5.5 8.2 1.7 1.7 3.3-3.6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="m6 6 4 4m0-4-4 4"/></symbol>
+  <symbol id="i-dash" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M5.5 8h5"/></symbol>
+  <symbol id="i-ring" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke-dasharray="2.2 2.4"/></symbol>
+  <symbol id="i-run" viewBox="0 0 16 16"><path d="M8 2a6 6 0 1 1-6 6"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 16 16"><path d="M8 2.2 14.2 13H1.8z"/><path d="M8 6.5v3M8 11.3v.1"/></symbol>
+  <symbol id="i-sound" viewBox="0 0 16 16"><path d="M3 6.2h2.2L8.5 3.5v9L5.2 9.8H3z"/><path d="M10.8 5.6a3.4 3.4 0 0 1 0 4.8M12.6 3.9a5.8 5.8 0 0 1 0 8.2"/></symbol>
+  <symbol id="i-mute" viewBox="0 0 16 16"><path d="M3 6.2h2.2L8.5 3.5v9L5.2 9.8H3z"/><path d="m11 6.2 3.2 3.6m0-3.6L11 9.8"/></symbol>
+  <symbol id="i-people" viewBox="0 0 16 16"><circle cx="6" cy="5.5" r="2.3"/><path d="M1.8 13c.4-2.3 2.1-3.6 4.2-3.6s3.8 1.3 4.2 3.6"/><path d="M10.6 3.4a2.2 2.2 0 0 1 0 4.2M12 9.6c1.2.5 2 1.6 2.2 3.4"/></symbol>
+  <symbol id="i-building" viewBox="0 0 16 16"><path d="M3 13.5V3.2a.7.7 0 0 1 .7-.7h5.6a.7.7 0 0 1 .7.7v10.3M10 6.5h2.3a.7.7 0 0 1 .7.7v6.3M1.8 13.5h12.4M5.3 5h1.4M5.3 7.5h1.4M5.3 10h1.4"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.4M8 10.8v.1"/></symbol>
+  <symbol id="i-gauge" viewBox="0 0 16 16"><path d="M2.5 11a5.5 5.5 0 1 1 11 0"/><path d="m8 11 2.6-3.2"/></symbol>
+  <symbol id="i-table" viewBox="0 0 16 16"><rect x="2" y="2.5" width="12" height="11" rx="1.5"/><path d="M2 6.2h12M6.5 6.2v7.3"/></symbol>
+  <symbol id="i-history" viewBox="0 0 16 16"><path d="M2.6 8a5.4 5.4 0 1 0 1.6-3.8L2.6 5.8"/><path d="M2.6 2.8v3h3M8 5.2V8l2 1.4"/></symbol>
+  <symbol id="i-log" viewBox="0 0 16 16"><rect x="2" y="2.5" width="12" height="11" rx="1.5"/><path d="m4.8 6.2 1.8 1.6-1.8 1.6M8.2 10h3"/></symbol>
+  <symbol id="i-login" viewBox="0 0 16 16"><path d="M9.5 2.5H12a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9.5M6.5 5 9.5 8l-3 3M9.5 8H2.5"/></symbol>
+  <symbol id="i-flow" viewBox="0 0 16 16"><circle cx="3.5" cy="4" r="1.6"/><circle cx="3.5" cy="12" r="1.6"/><path d="M5.1 4h2.4a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h1.5M5.1 12h2.4"/><path d="m11.8 10.4 1.6 1.6-1.6 1.6"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="brand">
+    <div class="mark"><svg class="i"><use href="#i-flow"/></svg></div>
+    <div>
+      <h1>Контакт-парсер</h1>
+      <p>dou.ua и LinkedIn → Google Sheets</p>
+    </div>
+  </div>
+  <div class="top-right">
+    <div class="session" id="session" data-s="unknown">
+      <span class="dot"></span>
+      <span class="txt" id="sessionText">LinkedIn: проверяю…</span>
+      <button class="btn sm" id="loginBtn" type="button"><svg class="i"><use href="#i-login"/></svg><span>Войти</span></button>
+      <button class="btn sm ghost" id="loginCancel" type="button" hidden>Отменить</button>
+    </div>
+    <button class="btn icon-btn ghost" id="soundBtn" type="button" title="Звук по окончании" aria-label="Звук по окончании">
+      <svg class="i"><use href="#i-sound"/></svg>
+    </button>
+    {% if sheet_url %}
+      <a class="btn" href="{{ sheet_url }}" target="_blank" rel="noopener"><svg class="i"><use href="#i-table"/></svg>Открыть Google Таблицу</a>
+    {% else %}
+      <span class="btn" style="cursor:default" title="Впишите SHEET_ID в .env, чтобы писать в Google Таблицу"><svg class="i"><use href="#i-table"/></svg>Запись в output/*.csv</span>
+    {% endif %}
+  </div>
+</header>
+
+<div class="alert" id="alert" role="alert" hidden>
+  <svg class="i"><use href="#i-alert"/></svg>
+  <div><b id="alertTitle"></b><span id="alertText"></span></div>
+  <button class="close" id="alertClose" type="button" aria-label="Скрыть"><svg class="i"><use href="#i-x"/></svg></button>
+</div>
+
+<main class="grid">
+  <section class="panel queue" aria-labelledby="qTitle">
+    <div class="panel-head">
+      <h2 id="qTitle">Ссылки</h2>
+      <span class="aside" id="qAside">по одной в строке</span>
+    </div>
+    <div class="input-wrap">
+      <textarea id="links" aria-label="Вставьте ссылки" spellcheck="false" placeholder="Вставьте ссылки, по одной в строке&#10;https://jobs.dou.ua/companies/epam-systems/&#10;https://www.linkedin.com/company/grammarly/people/"></textarea>
+    </div>
+    <div class="summary" id="summary"></div>
+    <ul class="links" id="linkList"></ul>
+    <div class="empty-q" id="emptyQ">
+      <p>Тип каждой ссылки определяется сразу при вставке. Поддерживаются:</p>
+      <ul>
+        <li><span class="src dou">DOU</span> компания, каталог компаний, профиль</li>
+        <li><span class="src linkedin">IN</span> компания, вкладка People, поиск людей, профиль</li>
+      </ul>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="start" type="button"><svg class="i"><use href="#i-play"/></svg>Запустить</button>
+      <button class="btn danger" id="stop" type="button" disabled><svg class="i"><use href="#i-stop"/></svg>Остановить</button>
+    </div>
+    <div class="hint" id="hint" hidden></div>
+  </section>
+
+  <div class="col">
+    <section class="panel tele" aria-live="polite">
+      <div class="tele-top">
+        <h2 class="state" id="state" data-s="idle"><span class="dot"></span><span id="stateText">Готов к запуску</span></h2>
+        <div class="times">
+          <span>Прошло <b class="num" id="elapsed">0:00</b></span>
+          <span>Осталось <b class="num" id="eta">—</b></span>
+        </div>
+      </div>
+      <div class="bar is-idle" id="bar"><span class="seg"></span></div>
+      <div class="bar-cap"><span><span class="num" id="progress">0 / 0</span> ссылок обработано</span><span id="pauseInfo">Пауза между страницами {{ pause }} с</span></div>
+
+      <div class="now" id="now">
+        <div class="now-row" id="nowRow"><span id="nowText">Вставьте ссылки слева и нажмите «Запустить».</span></div>
+        <div class="wait" id="wait" hidden>
+          <span id="waitLabel"></span>
+          <span class="wait-track"><span class="wait-fill" id="waitFill"></span></span>
+          <span class="num" id="waitLeft"></span>
+        </div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric"><div class="v" id="mPeople">0</div><div class="l"><svg class="i"><use href="#i-people"/></svg>людей добавлено</div></div>
+        <div class="metric"><div class="v" id="mCompanies">0</div><div class="l"><svg class="i"><use href="#i-building"/></svg>компаний добавлено</div></div>
+        <div class="metric err"><div class="v" id="mErrors">0</div><div class="l"><svg class="i"><use href="#i-warn"/></svg>ошибок</div></div>
+        <div class="metric">
+          <div class="v"><span id="mLi">0</span><small> / <span id="mLimit">{{ limit }}</span></small></div>
+          <div class="l"><svg class="i"><use href="#i-gauge"/></svg>лимит LinkedIn</div>
+          <div class="meter" id="meter"><i id="meterFill"></i></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="tabs-head" role="tablist">
+        <button class="tab" role="tab" aria-selected="true" data-tab="contacts" type="button"><svg class="i"><use href="#i-people"/></svg>Контакты <span class="count num" id="cAll">0</span></button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="log" type="button"><svg class="i"><use href="#i-log"/></svg>Лог</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="history" type="button"><svg class="i"><use href="#i-history"/></svg>История</button>
+        <div class="tabs-tools" id="contactTools">
+          <div class="seg-ctl" role="group" aria-label="Тип записей">
+            <button type="button" aria-pressed="true" data-kind="person">Люди <span class="num" id="cPeople">0</span></button>
+            <button type="button" aria-pressed="false" data-kind="company">Компании <span class="num" id="cCompanies">0</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="tab-body" id="tabBody"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const icon = (name, cls = "") => `<svg class="i ${cls}"><use href="#i-${name}"/></svg>`;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+const fmtTime = (s) => {
+  s = Math.max(0, Math.round(s));
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  return h ? `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : `${m}:${String(sec).padStart(2, "0")}`;
+};
+const shortUrl = (u) => u.replace(/^https?:\/\/(www\.)?/, "");
+const plural = (n, one, few, many) => {
+  const m10 = n % 10, m100 = n % 100;
+  return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many;
+};
+const SRC = { linkedin: ["linkedin", "IN"], dou: ["dou", "DOU"] };
+
+/* ---------- state ---------- */
+let S = null;               // последний ответ /status
+let classified = [];        // разбор ссылок до запуска
+let records = [];           // лента найденных записей
+let seq = 0, runKey = "";
+let tab = "contacts", kind = "person";
+let wasRunning = false, showRun = false, dirty = false;
+let syncAt = 0;             // время последнего ответа, для локального тика таймеров
+let freshIds = new Set();
+let sound = store.get("sound", "1") === "1";
+
+const links = $("links");
+links.value = store.get("links", "");
+
+/* ---------- link recognition ---------- */
+let classifyTimer;
+links.addEventListener("input", () => {
+  store.set("links", links.value);
+  dirty = true;
+  if (!S || !S.running) showRun = false;
+  clearTimeout(classifyTimer);
+  classifyTimer = setTimeout(classify, 250);
+});
+async function classify() {
+  try {
+    const r = await fetch("/classify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ links: links.value }) });
+    classified = (await r.json()).links || [];
+  } catch (e) { classified = []; }
+  renderQueue();
+}
+
+let lastQueue = null;
+function renderQueue() {
+  const run = showRun && S && S.links && S.links.length;
+  const items = run ? S.links : classified.map((l) => ({ ...l, status: l.ok ? "ready" : "bad" }));
+  $("emptyQ").hidden = items.length > 0;
+  $("linkList").hidden = items.length === 0;
+
+  // сводка
+  const n = { dou: 0, linkedin: 0, bad: 0 };
+  items.forEach((l) => { if (!l.ok) n.bad++; else n[l.source]++; });
+  let sum = "";
+  if (items.length) {
+    sum += `<span class="tag">${items.length} ${plural(items.length, "ссылка", "ссылки", "ссылок")}</span>`;
+    if (n.dou) sum += `<span class="tag dou">DOU · ${n.dou}</span>`;
+    if (n.linkedin) sum += `<span class="tag li">LinkedIn · ${n.linkedin}</span>`;
+    if (n.bad) sum += `<span class="tag bad">${icon("warn")} не распознано · ${n.bad}</span>`;
+  }
+  $("summary").innerHTML = sum;
+  $("qAside").textContent = run ? "ход запуска" : "по одной в строке";
+
+  const listHtml = items.map((l) => {
+    const src = SRC[l.source] || ["none", "?"];
+    let st = icon("ring"), res = "";
+    if (l.status === "running") st = icon("run", "spin");
+    else if (l.status === "done") {
+      st = icon("check");
+      const parts = [];
+      if (l.people) parts.push(`<b>+${l.people}</b> чел.`);
+      if (l.companies) parts.push(`<b>+${l.companies}</b> комп.`);
+      res = parts.join(" ") || "нет новых";
+    } else if (l.status === "error" || l.status === "bad") st = icon("x");
+    else if (l.status === "skipped") { st = icon("dash"); res = "пропущена"; }
+    else if (l.status === "queued") res = "в очереди";
+    const why = l.status === "bad" ? l.reason : l.status === "error" ? l.error : "";
+    return `<li class="link ${l.status}">
+      <span class="st">${st}</span>
+      <div class="body">
+        <div class="meta"><span class="src ${src[0]}">${src[1]}</span>${esc(l.label || "не распознана")}</div>
+        <div class="url" title="${esc(l.url)}">${esc(shortUrl(l.url))}</div>
+        ${why ? `<div class="why">${esc(why)}</div>` : ""}
+      </div>
+      <span class="res">${res}</span>
+    </li>`;
+  }).join("");
+  if (listHtml === lastQueue) return;  // ничего не изменилось — не трогаем DOM
+  lastQueue = listHtml;
+  const list = $("linkList");
+  list.innerHTML = listHtml;
+  // прокручиваем только сам список к текущей ссылке, страницу не двигаем
+  const cur = list.querySelector(".link.running");
+  if (cur && run) {
+    const top = cur.offsetTop, bottom = top + cur.offsetHeight;
+    if (top < list.scrollTop) list.scrollTop = top;
+    else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
+  }
+}
+
+/* ---------- actions ---------- */
+async function post(url, body) {
+  try {
+    const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+    return await r.json();
+  } catch (e) { return { ok: false, error: "Сервер не отвечает. Проверьте, что python app.py запущен." }; }
+}
+function hint(text) { $("hint").textContent = text || ""; $("hint").hidden = !text; }
+
+$("start").onclick = async () => {
+  hint("");
+  if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
+  unlockAudio();
+  $("start").disabled = true;
+  const res = await post("/start", { links: links.value });
+  if (!res.ok) { hint(res.error); $("start").disabled = false; return; }
+  showRun = true; dirty = false; hideAlert();
+  refresh();
+};
+$("stop").onclick = async () => {
+  $("stop").disabled = true;
+  const res = await post("/stop");
+  if (!res.ok) hint(res.error);
+  refresh();
+};
+$("loginBtn").onclick = async () => {
+  const res = await post("/linkedin/login");
+  if (!res.ok) hint(res.error);
+  refresh();
+};
+$("loginCancel").onclick = async () => { await post("/linkedin/cancel"); refresh(); };
+$("alertClose").onclick = hideAlert;
+
+function setSoundIcon() {
+  $("soundBtn").innerHTML = icon(sound ? "sound" : "mute");
+  $("soundBtn").title = sound ? "Звук по окончании: включён" : "Звук по окончании: выключен";
+  $("soundBtn").setAttribute("aria-pressed", String(sound));
+}
+$("soundBtn").onclick = () => { sound = !sound; store.set("sound", sound ? "1" : "0"); setSoundIcon(); if (sound) { unlockAudio(); chime(true); } };
+setSoundIcon();
+
+/* ---------- sound + notifications ---------- */
+let actx;
+function unlockAudio() {
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); } catch (e) {}
+}
+function chime(ok) {
+  if (!sound || !actx) return;
+  const notes = ok ? [660, 880, 1175] : [440, 330];
+  notes.forEach((f, i) => {
+    const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + i * 0.16;
+    o.type = "sine"; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.16, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + 0.34);
+  });
+}
+function notify(title, body) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  try { new Notification(title, { body }); } catch (e) {}
+}
+function showAlert(title, text, info) {
+  $("alertTitle").textContent = title; $("alertText").textContent = text;
+  $("alert").classList.toggle("info", !!info); $("alert").hidden = false;
+}
+function hideAlert() { $("alert").hidden = true; }
+
+function onFinished(s) {
+  const summary = `Добавлено людей: ${s.added_people}, компаний: ${s.added_companies}, ошибок: ${s.errors}`;
+  if (s.stopped_by === "linkedin") {
+    chime(false);
+    showAlert("Запуск остановлен защитой LinkedIn", s.message.replace(/^СТОП:\s*/, ""));
+    notify("Сбор остановлен: LinkedIn", s.message.replace(/^СТОП:\s*/, ""));
+  } else if (s.stopped_by === "crash") {
+    chime(false);
+    showAlert("Запуск прерван", s.message);
+    notify("Сбор прерван", s.message);
+  } else {
+    chime(true);
+    notify(s.stopped_by === "user" ? "Сбор остановлен" : "Сбор завершён", summary);
+  }
+  loadHistory();
+}
+
+/* ---------- status ---------- */
+async function refresh() {
+  let s;
+  try { s = await (await fetch(`/status?since=${seq}`)).json(); } catch (e) { return; }
+  const key = s.started_at || "";
+  if (key !== runKey || s.seq < seq) {
+    // новый запуск: ответ запрошен с номером от старого, поэтому перезапрашиваем ленту с нуля
+    const refetch = seq > 0;
+    records = []; seq = 0; runKey = key;
+    if (refetch) return refresh();
+  }
+  if (s.records && s.records.length) {
+    s.records.forEach((r) => freshIds.add(r.id));
+    records = records.concat(s.records);
+    seq = s.seq;
+  }
+  if (s.running) showRun = true;
+  else if (S === null && s.links && s.links.length && !dirty) showRun = true;
+  S = s; syncAt = performance.now();
+  if (wasRunning && !s.running) onFinished(s);
+  wasRunning = s.running;
+  render();
+}
+
+function render() {
+  const s = S;
+  // кнопки
+  $("start").disabled = s.running || s.login.active;
+  $("stop").disabled = !s.running;
+  links.disabled = s.running;
+
+  // состояние
+  const st = $("state");
+  let label = "Готов к запуску", ds = "idle";
+  if (s.running) { label = "Идёт сбор"; ds = "running"; }
+  else if (s.message) {
+    ds = /СТОП|прерван|Остановлено/.test(s.message) ? "stopped" : "done";
+    label = s.stopped_by === "linkedin" ? "Остановлено защитой LinkedIn" : s.stopped_by === "user" ? "Остановлено" : s.stopped_by === "crash" ? "Запуск прерван" : "Готово";
+  }
+  st.dataset.s = ds; $("stateText").textContent = label;
+
+  // прогресс
+  $("progress").textContent = `${s.processed} / ${s.total}`;
+  const segs = (s.links && s.links.length) ? s.links : [];
+  $("bar").classList.toggle("is-idle", !segs.length);
+  $("bar").innerHTML = segs.length ? segs.map((l) => `<span class="seg ${l.status}"></span>`).join("") : `<span class="seg"></span>`;
+
+  // метрики
+  $("mPeople").textContent = s.added_people;
+  $("mCompanies").textContent = s.added_companies;
+  $("mErrors").textContent = s.errors;
+  $("mErrors").classList.toggle("has", s.errors > 0);
+  $("mLi").textContent = s.li_profiles;
+  $("mLimit").textContent = s.limit;
+  const pct = s.limit ? Math.min(100, (s.li_profiles / s.limit) * 100) : 0;
+  $("meterFill").style.width = pct + "%";
+  $("meter").classList.toggle("hot", pct >= 75 && pct < 100);
+  $("meter").classList.toggle("full", pct >= 100);
+
+  // текущая ссылка
+  if (s.running && s.current) {
+    $("nowRow").innerHTML = `${icon("run", "spin")}<span>Сейчас</span><span class="url" title="${esc(s.current)}">${esc(shortUrl(s.current))}</span>`;
+  } else if (s.running) {
+    $("nowRow").innerHTML = `${icon("run", "spin")}<span>Открываю браузер…</span>`;
+  } else if (s.message) {
+    const total = s.added_people + s.added_companies;
+    const res = total
+      ? `Добавлено ${s.added_people} ${plural(s.added_people, "человек", "человека", "человек")} и ${s.added_companies} ${plural(s.added_companies, "компания", "компании", "компаний")}`
+      : "Новых записей нет";
+    const ic = s.stopped_by ? "dash" : "check";
+    $("nowRow").innerHTML = `${icon(ic)}<span>${res}${s.errors ? `, ошибок: ${s.errors}. Причины — у ссылок слева и в errors.log` : ""}.</span>`;
+  } else {
+    $("nowRow").innerHTML = `<span>Вставьте ссылки слева и нажмите «Запустить».</span>`;
+  }
+
+  // сессия LinkedIn
+  const ses = $("session");
+  if (s.login.active) {
+    ses.dataset.s = "wait";
+    $("sessionText").textContent = s.login.message || "Ожидаю вход в окне браузера…";
+    $("loginBtn").hidden = true; $("loginCancel").hidden = false;
+  } else {
+    const inn = s.session.status === "in", unknown = s.session.status === "unknown";
+    ses.dataset.s = inn ? "in" : unknown ? "unknown" : "out";
+    $("sessionText").innerHTML = inn
+      ? `LinkedIn: вход выполнен <span class="sub">· до ${esc(s.session.expires)}</span>`
+      : unknown ? "LinkedIn: статус проверится после запуска" : "LinkedIn: нужен вход";
+    $("loginBtn").hidden = false; $("loginCancel").hidden = true;
+    $("loginBtn").querySelector("span").textContent = inn ? "Перевойти" : "Войти";
+    $("loginBtn").classList.toggle("primary", !inn && !unknown);
+    $("loginBtn").disabled = s.running;
+    if (s.login.state === "failed" && s.login.message && !$("alert").dataset.loginShown) {
+      $("alert").dataset.loginShown = "1";
+      showAlert("Вход в LinkedIn не выполнен", s.login.message, true);
+    }
+  }
+  if (s.login.active) delete $("alert").dataset.loginShown;
+
+  renderQueue();
+  tick();
+  renderTab();
+}
+
+/* локальный тик: таймер паузы, прошло, осталось */
+function tick() {
+  if (!S) return;
+  const d = (performance.now() - syncAt) / 1000;
+  const s = S;
+  const elapsed = s.running ? s.elapsed + d : 0;
+  $("elapsed").textContent = s.running ? fmtTime(elapsed) : (s.finished_at && s.started_at ? fmtTime((new Date(s.finished_at) - new Date(s.started_at)) / 1000) : "0:00");
+  if (s.running && s.processed > 0) {
+    const left = (elapsed / s.processed) * (s.total - s.processed);
+    $("eta").textContent = left < 60 ? "< 1 мин" : "≈ " + Math.round(left / 60) + " мин";
+  } else {
+    $("eta").textContent = s.running ? "считаю…" : "—";
+  }
+  const left = Math.max(0, s.wait_left - d);
+  const waiting = s.running && s.wait_label && left > 0.05;
+  $("wait").hidden = !waiting;
+  if (waiting) {
+    $("waitLabel").textContent = s.wait_label;
+    $("waitLeft").textContent = left.toFixed(left < 10 ? 1 : 0) + " с";
+    $("waitFill").style.transform = `scaleX(${s.wait_total ? left / s.wait_total : 0})`;
+  }
+}
+(function loop() { tick(); requestAnimationFrame(loop); })();
+
+/* ---------- tabs ---------- */
+document.querySelectorAll(".tab").forEach((b) => b.onclick = () => {
+  tab = b.dataset.tab;
+  document.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-selected", String(t === b)));
+  $("contactTools").style.visibility = tab === "contacts" ? "visible" : "hidden";
+  if (tab === "history") loadHistory();
+  renderTab(true);
+});
+document.querySelectorAll(".seg-ctl button").forEach((b) => b.onclick = () => {
+  kind = b.dataset.kind;
+  document.querySelectorAll(".seg-ctl button").forEach((t) => t.setAttribute("aria-pressed", String(t === b)));
+  renderTab(true);
+});
+
+let runs = [];
+async function loadHistory() {
+  try { runs = (await (await fetch("/history")).json()).runs || []; } catch (e) {}
+  if (tab === "history") renderTab(true);
+}
+
+const emptyBlock = (ic, title, text) => `<div class="empty">${icon(ic)}<b>${title}</b><p>${text}</p></div>`;
+let lastRender = "";
+function renderTab(force) {
+  const body = $("tabBody");
+  const people = records.filter((r) => r.type === "person");
+  const companies = records.filter((r) => r.type === "company");
+  $("cAll").textContent = records.length;
+  $("cPeople").textContent = people.length;
+  $("cCompanies").textContent = companies.length;
+
+  let html = "";
+  if (tab === "contacts") {
+    const list = (kind === "person" ? people : companies).slice(-500).reverse();
+    if (!list.length) {
+      html = kind === "person"
+        ? emptyBlock("people", "Людей пока нет", "Во время сбора новые люди появляются здесь сразу, ещё до того, как вы откроете таблицу.")
+        : emptyBlock("building", "Компаний пока нет", "Компании со страниц dou.ua и LinkedIn появятся здесь по мере сбора.");
+    } else if (kind === "person") {
+      html = `<table><thead><tr><th>Имя</th><th>Должность</th><th>Компания</th><th>Источник</th><th></th></tr></thead><tbody>` +
+        list.map((r) => `<tr class="${r.new ? "" : "dup"} ${freshIds.has(r.id) ? "fresh" : ""}">
+          <td><span class="name">${esc(r.name) || "—"}</span></td>
+          <td class="cell-sub"><div class="clip" title="${esc(r.title)}">${esc(r.title) || "—"}</div></td>
+          <td><div class="clip" title="${esc(r.company)}">${esc(r.company) || "—"}</div></td>
+          <td><span class="src ${SRC[r.source][0]}">${SRC[r.source][1]}</span> ${r.new ? `<span class="pill-new">новый</span>` : `<span class="pill-dup" title="Уже есть в таблице, не добавлен">дубль</span>`}</td>
+          <td><a class="ext" href="${esc(r.url)}" target="_blank" rel="noopener" aria-label="Открыть профиль">${icon("ext")}</a></td>
+        </tr>`).join("") + `</tbody></table>`;
+    } else {
+      html = `<table><thead><tr><th>Название</th><th>Сайт</th><th>Город</th><th>Размер</th><th>Источник</th><th></th></tr></thead><tbody>` +
+        list.map((r) => `<tr class="${r.new ? "" : "dup"} ${freshIds.has(r.id) ? "fresh" : ""}">
+          <td><span class="name">${esc(r.name) || "—"}</span></td>
+          <td><div class="clip" title="${esc(r.website)}">${esc(shortUrl(r.website || "")) || "—"}</div></td>
+          <td class="cell-sub"><div class="clip" title="${esc(r.city)}">${esc(r.city) || "—"}</div></td>
+          <td class="cell-sub">${esc(r.size) || "—"}</td>
+          <td><span class="src ${SRC[r.source][0]}">${SRC[r.source][1]}</span> ${r.new ? `<span class="pill-new">новая</span>` : `<span class="pill-dup" title="Уже есть в таблице, не добавлена">дубль</span>`}</td>
+          <td><a class="ext" href="${esc(r.url)}" target="_blank" rel="noopener" aria-label="Открыть страницу">${icon("ext")}</a></td>
+        </tr>`).join("") + `</tbody></table>`;
+    }
+  } else if (tab === "log") {
+    const lines = (S && S.log) || [];
+    html = lines.length ? `<pre class="log">${lines.map((l) => {
+      const m = l.match(/^(\d\d:\d\d:\d\d) (.*)$/) || [null, "", l];
+      const t = m[2];
+      const c = /ОШИБКА|СТОП|прерван/.test(t) ? "e" : /найдено|Готово/.test(t) ? "ok" : /^\[\d+\//.test(t) ? "h" : /жду|Остановка|Остановлено/.test(t) ? "w" : "";
+      return `<span class="t">${m[1]}</span> <span class="${c}">${esc(t)}</span>`;
+    }).join("\n")}</pre>`
+      : emptyBlock("log", "Лог пуст", "Здесь будет видно каждое действие: какая страница открыта, что найдено, что пошло не так.");
+  } else {
+    html = runs.length ? `<table><thead><tr><th>Начало</th><th>Длительность</th><th>Ссылок</th><th>Людей</th><th>Компаний</th><th>Ошибок</th><th>Итог</th></tr></thead><tbody>` +
+      runs.map((h) => {
+        const d = new Date(h.started_at);
+        const date = isNaN(d) ? esc(h.started_at) : d.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+        const ok = h.message === "Готово";
+        const res = ok ? "готово" : /СТОП/.test(h.message) ? "стоп LinkedIn" : /Остановлено/.test(h.message) ? "остановлено" : "прерван";
+        return `<tr><td class="num">${date}</td><td class="num">${fmtTime(h.seconds)}</td>
+          <td class="num">${h.processed}/${h.total}</td><td class="num">+${h.added_people}</td><td class="num">+${h.added_companies}</td>
+          <td class="num ${h.errors ? "res-err" : ""}">${h.errors}</td>
+          <td class="${ok ? "res-ok" : "res-err"}" title="${esc(h.message)}">${res}</td></tr>`;
+      }).join("") + `</tbody></table>`
+      : emptyBlock("history", "Запусков пока не было", "После каждого запуска здесь сохраняется итог: сколько ссылок, людей, компаний и ошибок.");
+  }
+  if (!force && html === lastRender) return;
+  const atBottom = body.scrollTop + body.clientHeight >= body.scrollHeight - 24;
+  body.innerHTML = html; lastRender = html;
+  if (tab === "log" && atBottom) body.scrollTop = body.scrollHeight;
+  freshIds.clear();
+}
+
+classify();
+loadHistory();
+refresh();
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>
