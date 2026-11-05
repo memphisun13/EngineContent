@@ -1,0 +1,8 @@
+# Ссылки по одной в строке. Строки с # пропускаются.
+https://jobs.dou.ua/companies/epam-systems/
+https://jobs.dou.ua/companies/grammarly/
+# https://jobs.dou.ua/companies/?city=Львів
+# https://www.linkedin.com/company/grammarly/
+# https://www.linkedin.com/company/grammarly/people/?keywords=head
+# https://www.linkedin.com/search/results/people/?keywords=CTO%20fintech
+# https://www.linkedin.com/in/some-profile/
