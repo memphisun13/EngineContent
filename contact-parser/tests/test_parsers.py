@@ -182,10 +182,10 @@ class TestStore(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             s = CsvStore(d)
             p = Person("A", "B", "CEO", "X", "https://www.linkedin.com/in/ab/", "linkedin")
-            self.assertEqual(s.add_people([p, p]), 1)
+            self.assertEqual(len(s.add_people([p, p])), 1)
             s2 = CsvStore(d)  # повторный запуск
             p2 = Person("A", "B", "CEO", "X", "https://linkedin.com/in/ab?x=1", "linkedin")
-            self.assertEqual(s2.add_people([p2]), 0)
+            self.assertEqual(s2.add_people([p2]), [])
 
 
 if __name__ == "__main__":

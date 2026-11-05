@@ -52,6 +52,37 @@ def profile_url(href: str) -> str:
     return normalize_url(f"{BASE}/in/{m.group(1)}/") if m else ""
 
 
+# ---------- сохранённая сессия ----------
+
+def session_info(profile_dir: str) -> dict:
+    """Есть ли в профиле браузера cookie входа LinkedIn (li_at) и до какого числа она действует.
+
+    Читаем базу cookies Chromium только на чтение, браузер для этого не запускаем.
+    Само значение cookie зашифровано и нам не нужно — смотрим только имя и срок.
+    """
+    import sqlite3
+    from datetime import datetime, timedelta, timezone
+    from pathlib import Path
+
+    base = Path(profile_dir)
+    for db in (base / "Default" / "Network" / "Cookies", base / "Default" / "Cookies"):
+        if not db.is_file():
+            continue
+        try:
+            con = sqlite3.connect(f"file:{db.as_posix()}?mode=ro&immutable=1", uri=True)
+            row = con.execute("SELECT MAX(expires_utc) FROM cookies WHERE name='li_at' "
+                              "AND host_key LIKE '%linkedin.com'").fetchone()
+            con.close()
+        except sqlite3.Error:
+            continue
+        if row and row[0]:
+            expires = datetime(1601, 1, 1) + timedelta(microseconds=row[0])
+            if expires > datetime.now(timezone.utc).replace(tzinfo=None):
+                return {"status": "in", "expires": expires.strftime("%d.%m.%Y")}
+            return {"status": "out", "expires": ""}
+    return {"status": "out", "expires": ""}
+
+
 # ---------- защита аккаунта ----------
 
 WARNING_PATTERNS = [
@@ -73,7 +104,8 @@ def check_page(url: str, html: str) -> None:
         raise StopRun("LinkedIn показал капчу. Запуск остановлен — пройдите её вручную в браузере "
                       "и сделайте перерыв перед новым запуском.")
     if path.startswith(("/login", "/authwall", "/uas/login", "/signup")) or 'name="session_key"' in html:
-        raise StopRun("Вы не залогинены в LinkedIn. Выполните `python main.py --login`, войдите и повторите запуск.")
+        raise StopRun("Вы не залогинены в LinkedIn. Нажмите «Войти» вверху страницы (или выполните `python main.py --login`), "
+                      "войдите и повторите запуск.")
     text = BeautifulSoup(html, "html.parser").get_text(" ")[:20000]
     m = WARNING_RE.search(text)
     if m:
@@ -234,7 +266,7 @@ class LinkedInScraper:
         except LinkError as e:
             check_page(self.r.page.url, self.r.page.content())  # логин/капча -> понятный StopRun
             if str(e).startswith("HTTP"):
-                raise LinkError(f"{e}: LinkedIn не отдал страницу — проверьте вход (python main.py --login)") from None
+                raise LinkError(f"{e}: LinkedIn не отдал страницу. Проверьте вход: кнопка «Войти» или python main.py --login") from None
             raise
         self.r.sleep_random(1.5, 3)  # даём догрузиться динамике
         html = self.r.page.content()

@@ -62,16 +62,17 @@ class SheetStore(_Dedup):
                 ws.update(range_name="A1", values=[headers])
         return ws
 
-    def _append(self, sheet: str, records: list) -> int:
+    def _append(self, sheet: str, records: list) -> list:
+        """Пишет только новые записи и возвращает их список."""
         records = self.fresh(sheet, records)
         if records:
             self.ws[sheet].append_rows([r.row() for r in records], value_input_option="RAW")
-        return len(records)
+        return records
 
-    def add_people(self, people: list[Person]) -> int:
+    def add_people(self, people: list[Person]) -> list[Person]:
         return self._append(PEOPLE_SHEET, people)
 
-    def add_companies(self, companies: list[Company]) -> int:
+    def add_companies(self, companies: list[Company]) -> list[Company]:
         return self._append(COMPANIES_SHEET, companies)
 
 
@@ -94,17 +95,17 @@ class CsvStore(_Dedup):
                     csv.writer(f).writerow(headers)
         self.url = self.folder.resolve().as_uri()
 
-    def _append(self, sheet: str, records: list) -> int:
+    def _append(self, sheet: str, records: list) -> list:
         records = self.fresh(sheet, records)
         if records:
             with self.files[sheet][0].open("a", encoding="utf-8-sig", newline="") as f:
                 csv.writer(f).writerows(r.row() for r in records)
-        return len(records)
+        return records
 
-    def add_people(self, people: list[Person]) -> int:
+    def add_people(self, people: list[Person]) -> list[Person]:
         return self._append(PEOPLE_SHEET, people)
 
-    def add_companies(self, companies: list[Company]) -> int:
+    def add_companies(self, companies: list[Company]) -> list[Company]:
         return self._append(COMPANIES_SHEET, companies)
 
 

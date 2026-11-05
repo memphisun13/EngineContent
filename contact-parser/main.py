@@ -13,19 +13,11 @@ from common import Settings
 
 
 def login(settings: Settings) -> None:
-    from playwright.sync_api import sync_playwright
+    from runner import linkedin_login
 
-    from runner import open_browser_context
-
-    settings.headless = False
-    with sync_playwright() as pw:
-        ctx = open_browser_context(pw, settings)
-        page = ctx.pages[0] if ctx.pages else ctx.new_page()
-        page.goto("https://www.linkedin.com/login")
-        print("Войдите в LinkedIn в открывшемся окне браузера (логин, пароль, код подтверждения).")
-        input("Когда увидите свою ленту LinkedIn — нажмите Enter здесь, чтобы сохранить сессию… ")
-        ctx.close()
-    print(f"Сессия сохранена в {settings.profile_dir}")
+    print("Откроется окно браузера. Войдите в LinkedIn: логин, пароль, код подтверждения.")
+    ok = linkedin_login(settings, on_status=print)
+    print(f"Сессия сохранена в {settings.profile_dir}" if ok else "Вход не выполнен — запустите команду ещё раз.")
 
 
 def main() -> int:
