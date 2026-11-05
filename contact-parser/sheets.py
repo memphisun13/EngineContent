@@ -19,14 +19,19 @@ class _Dedup:
         self.keys: dict[str, set[str]] = {PEOPLE_SHEET: set(), COMPANIES_SHEET: set()}
 
     def fresh(self, sheet: str, records: list) -> list:
-        out = []
+        """Записи, которых ещё нет в листе (и без повторов внутри пачки)."""
+        out, batch = [], set()
         for r in records:
             key = normalize_url(r.url)
-            if not key or key in self.keys[sheet]:
+            if not key or key in self.keys[sheet] or key in batch:
                 continue
-            self.keys[sheet].add(key)
+            batch.add(key)
             out.append(r)
         return out
+
+    def remember(self, sheet: str, records: list) -> None:
+        """Вызывается только после успешной записи, иначе при сбое API записи потерялись бы до конца запуска."""
+        self.keys[sheet].update(normalize_url(r.url) for r in records)
 
 
 class SheetStore(_Dedup):
@@ -72,6 +77,7 @@ class SheetStore(_Dedup):
         records = self.fresh(sheet, records)
         if records:
             self.ws[sheet].append_rows([r.row() for r in records], value_input_option="RAW")
+            self.remember(sheet, records)
         return records
 
     def add_people(self, people: list[Person]) -> list[Person]:
@@ -105,6 +111,7 @@ class CsvStore(_Dedup):
         if records:
             with self.files[sheet][0].open("a", encoding="utf-8-sig", newline="") as f:
                 csv.writer(f).writerows(r.row() for r in records)
+            self.remember(sheet, records)
         return records
 
     def add_people(self, people: list[Person]) -> list[Person]:

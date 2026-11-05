@@ -711,14 +711,14 @@ function render() {
     $("sessionText").textContent = s.login.message || "Ожидаю вход в окне браузера…";
     $("loginBtn").hidden = true; $("loginCancel").hidden = false;
   } else {
-    const inn = s.session.status === "in";
-    ses.dataset.s = inn ? "in" : "out";
+    const inn = s.session.status === "in", unknown = s.session.status === "unknown";
+    ses.dataset.s = inn ? "in" : unknown ? "unknown" : "out";
     $("sessionText").innerHTML = inn
       ? `LinkedIn: вход выполнен <span class="sub">· до ${esc(s.session.expires)}</span>`
-      : "LinkedIn: нужен вход";
+      : unknown ? "LinkedIn: статус проверится после запуска" : "LinkedIn: нужен вход";
     $("loginBtn").hidden = false; $("loginCancel").hidden = true;
     $("loginBtn").querySelector("span").textContent = inn ? "Перевойти" : "Войти";
-    $("loginBtn").classList.toggle("primary", !inn);
+    $("loginBtn").classList.toggle("primary", !inn && !unknown);
     $("loginBtn").disabled = s.running;
     if (s.login.state === "failed" && s.login.message && !$("alert").dataset.loginShown) {
       $("alert").dataset.loginShown = "1";
@@ -770,9 +770,9 @@ document.querySelectorAll(".seg-ctl button").forEach((b) => b.onclick = () => {
   renderTab(true);
 });
 
-let history = [];
+let runs = [];
 async function loadHistory() {
-  try { history = (await (await fetch("/history")).json()).runs || []; } catch (e) {}
+  try { runs = (await (await fetch("/history")).json()).runs || []; } catch (e) {}
   if (tab === "history") renderTab(true);
 }
 
@@ -823,8 +823,8 @@ function renderTab(force) {
     }).join("\n")}</pre>`
       : emptyBlock("log", "Лог пуст", "Здесь будет видно каждое действие: какая страница открыта, что найдено, что пошло не так.");
   } else {
-    html = history.length ? `<table><thead><tr><th>Начало</th><th>Длительность</th><th>Ссылок</th><th>Людей</th><th>Компаний</th><th>Ошибок</th><th>Итог</th></tr></thead><tbody>` +
-      history.map((h) => {
+    html = runs.length ? `<table><thead><tr><th>Начало</th><th>Длительность</th><th>Ссылок</th><th>Людей</th><th>Компаний</th><th>Ошибок</th><th>Итог</th></tr></thead><tbody>` +
+      runs.map((h) => {
         const d = new Date(h.started_at);
         const date = isNaN(d) ? esc(h.started_at) : d.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
         const ok = h.message === "Готово";

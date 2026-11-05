@@ -21,7 +21,7 @@ _login = {"state": "idle", "message": ""}  # idle | waiting | success | failed
 _login_thread: threading.Thread | None = None
 _login_cancel = threading.Event()
 
-_session_cache = {"at": 0.0, "value": {"status": "out", "expires": ""}}
+_session_cache = {"at": 0.0, "value": {"status": "unknown", "expires": ""}}
 
 
 def _running() -> bool:
@@ -39,11 +39,24 @@ def _sheet_url(settings: Settings) -> str:
 def _session() -> dict:
     """Статус входа в LinkedIn (кэш на 5 секунд, чтобы не читать файл на каждый опрос)."""
     if time.time() - _session_cache["at"] > 5:
-        _session_cache.update(at=time.time(), value=linkedin.session_info(Settings().profile_dir))
+        fresh = linkedin.session_info(Settings().profile_dir)
+        _session_cache["at"] = time.time()
+        if fresh["status"] != "unknown":  # файл занят браузером — оставляем последнее известное значение
+            _session_cache["value"] = fresh
     value = dict(_session_cache["value"])
     if _runner and _runner.state.get("li_auth") == "out" and not _logging_in():
         value["status"] = "out"  # во время запуска LinkedIn сказал, что сессии нет
     return value
+
+
+@app.before_request
+def local_only():
+    """Страница только для этого компьютера: чужие сайты не должны управлять запуском."""
+    host = (request.host or "").split(":")[0]
+    if host not in ("localhost", "127.0.0.1"):
+        return "Forbidden", 403
+    if request.method == "POST" and not request.is_json:
+        return jsonify(ok=False, error="Ожидался JSON"), 415
 
 
 @app.get("/")

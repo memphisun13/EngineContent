@@ -214,6 +214,18 @@ class TestLinkedIn(unittest.TestCase):
 
 
 class TestStore(unittest.TestCase):
+    def test_failed_write_is_retried(self):
+        with tempfile.TemporaryDirectory() as d:
+            s = CsvStore(d)
+            p = Person("A", "B", "CEO", "X", "https://dou.ua/users/ab/", "dou")
+            real = s.files["People"]
+            s.files["People"] = (Path(d) / "missing" / "people.csv", real[1])  # запись упадёт
+            with self.assertRaises(OSError):
+                s.add_people([p])
+            s.files["People"] = real
+            self.assertEqual(len(s.add_people([p])), 1)  # после сбоя запись не считается сохранённой
+
+
     def test_csv_dedup(self):
         with tempfile.TemporaryDirectory() as d:
             s = CsvStore(d)
@@ -222,6 +234,22 @@ class TestStore(unittest.TestCase):
             s2 = CsvStore(d)  # повторный запуск
             p2 = Person("A", "B", "CEO", "X", "https://linkedin.com/in/ab?x=1", "linkedin")
             self.assertEqual(s2.add_people([p2]), [])
+
+
+class TestApp(unittest.TestCase):
+    def setUp(self):
+        import app
+        self.client = app.app.test_client()
+
+    def test_local_only(self):
+        self.assertEqual(self.client.get("/history", headers={"Host": "evil.example"}).status_code, 403)
+        self.assertEqual(self.client.get("/history").status_code, 200)
+
+    def test_post_requires_json(self):
+        self.assertEqual(self.client.post("/stop", data={"x": "1"}).status_code, 415)
+        self.assertEqual(self.client.post("/stop", json={}).status_code, 200)
+        r = self.client.post("/classify", json={"links": "https://jobs.dou.ua/companies/epam-systems/"})
+        self.assertEqual(r.get_json()["links"][0]["label"], "компания")
 
 
 if __name__ == "__main__":

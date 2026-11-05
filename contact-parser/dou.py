@@ -92,7 +92,7 @@ def parse_company_list(html: str) -> list[str]:
     s = BeautifulSoup(html, "html.parser")
     urls = []
     # подгруженные кнопкой «Більше компаній» карточки приходят без <li class="l-company">
-    for a in s.select(".company a.cn-a[href], a.cn-a[href]"):
+    for a in s.select("a.cn-a[href]"):
         u = company_root(urljoin("https://jobs.dou.ua/", a["href"]))
         if u not in urls:
             urls.append(u)
@@ -191,3 +191,5 @@ class DouScraper:
                 yield from self._company(u)
             except LinkError as e:
                 self.r.error(u, str(e))
+            except Exception as e:  # одна компания не должна обрывать весь каталог
+                self.r.error(u, f"{type(e).__name__}: {str(e).splitlines()[0][:200] if str(e) else ''}")

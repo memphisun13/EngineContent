@@ -65,6 +65,7 @@ def session_info(profile_dir: str) -> dict:
     from pathlib import Path
 
     base = Path(profile_dir)
+    unreadable = False
     for db in (base / "Default" / "Network" / "Cookies", base / "Default" / "Cookies"):
         if not db.is_file():
             continue
@@ -74,13 +75,14 @@ def session_info(profile_dir: str) -> dict:
                               "AND host_key LIKE '%linkedin.com'").fetchone()
             con.close()
         except sqlite3.Error:
+            unreadable = True  # на Windows браузер держит файл открытым во время работы
             continue
         if row and row[0]:
             expires = datetime(1601, 1, 1) + timedelta(microseconds=row[0])
             if expires > datetime.now(timezone.utc).replace(tzinfo=None):
                 return {"status": "in", "expires": expires.strftime("%d.%m.%Y")}
             return {"status": "out", "expires": ""}
-    return {"status": "out", "expires": ""}
+    return {"status": "unknown" if unreadable else "out", "expires": ""}
 
 
 # ---------- защита аккаунта ----------
@@ -187,7 +189,11 @@ def _card_name(card: Tag, link: Tag) -> str:
             return clean(el.get_text(" "))
     for el in [link] + card.select("a[href*='/in/']"):
         span = el.select_one("span[aria-hidden='true']")
-        text = clean(span.get_text(" ")) if span else (_lines(el)[0] if _lines(el) else "")
+        if span:
+            text = clean(span.get_text(" "))
+        else:
+            lines = _lines(el)
+            text = lines[0] if lines else ""
         if text and not NOISE_RE.search(text):
             return text
     return ""

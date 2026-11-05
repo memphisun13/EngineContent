@@ -314,7 +314,8 @@ class Runner:
             raise
         except LinkError as e:
             if self.stopped:
-                status = "skipped"
+                # остановили посреди ссылки: если что-то уже сохранено, она частично выполнена
+                status = "done" if link["people"] or link["companies"] else "skipped"
             else:
                 status, err = "error", str(e)
                 self.error(url, err)
