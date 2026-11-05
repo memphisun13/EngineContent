@@ -57,9 +57,14 @@ class SheetStore(_Dedup):
             ws = self.sh.worksheet(title)
         except gspread.exceptions.WorksheetNotFound:
             ws = self.sh.add_worksheet(title=title, rows=1000, cols=len(headers))
-        if ws.row_values(1) != headers:
-            if not any(ws.row_values(1)):
-                ws.update(range_name="A1", values=[headers])
+        first = ws.row_values(1)
+        if not any(first):
+            ws.update(range_name="A1", values=[headers])
+        elif first[: len(headers)] != headers:
+            raise RuntimeError(
+                f"На листе «{title}» уже есть другие заголовки: {', '.join(first[:len(headers)])}. "
+                f"Нужны: {', '.join(headers)}. Переименуйте этот лист или очистите первую строку."
+            )
         return ws
 
     def _append(self, sheet: str, records: list) -> list:

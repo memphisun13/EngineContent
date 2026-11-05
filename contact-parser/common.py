@@ -123,12 +123,13 @@ def normalize_url(url: str) -> str:
     return urlunsplit(("https", host, path, "", ""))
 
 
-_NAME_SUFFIX = re.compile(r"[,(].*$")
+_NAME_SUFFIX = re.compile(r",.*$")          # «, MBA», «, PhD» и т.п.
+_NAME_PARENS = re.compile(r"\([^)]*\)|\[[^\]]*\]")  # «(Lena)», «[she/her]»
 
 
 def split_name(full: str) -> tuple[str, str]:
     """'Анна Петренко, MBA' -> ('Анна', 'Петренко')."""
-    full = clean(_NAME_SUFFIX.sub("", clean(full)))
+    full = clean(_NAME_SUFFIX.sub("", _NAME_PARENS.sub(" ", clean(full))))
     # убираем эмодзи и прочие не-буквенные символы по краям
     full = clean(re.sub(r"[^\w\s'’.\-]", " ", full))
     if not full:
@@ -137,7 +138,8 @@ def split_name(full: str) -> tuple[str, str]:
     return parts[0], (parts[1] if len(parts) > 1 else "")
 
 
-_AT = re.compile(r"\s+(?:at|@|в|у|в компании|in)\s+|\s*@\s*", re.I)
+# длинные варианты раньше коротких; «in» не берём: «Engineer in Kyiv» — это город, а не компания
+_AT = re.compile(r"\s+(?:в компании|at|в|у)\s+|\s*@\s*", re.I)
 
 
 def split_headline(headline: str) -> tuple[str, str]:

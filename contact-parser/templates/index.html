@@ -154,7 +154,7 @@ textarea:disabled { opacity: .55; }
 .src.dou { background: var(--dou-soft); color: var(--dou); }
 .src.none { background: var(--err-soft); color: var(--err); }
 
-.links { list-style: none; margin: 10px 0 0; padding: 0 8px; overflow: auto; flex: 1; min-height: 60px; }
+.links { list-style: none; margin: 10px 0 0; padding: 0 8px; overflow: auto; position: relative; flex: 1; min-height: 60px; }
 .link {
   display: grid; grid-template-columns: 18px 1fr auto; gap: 10px; align-items: start;
   padding: 9px 8px; border-radius: 8px; border-top: 1px solid var(--line-soft);
@@ -487,6 +487,7 @@ async function classify() {
   renderQueue();
 }
 
+let lastQueue = null;
 function renderQueue() {
   const run = showRun && S && S.links && S.links.length;
   const items = run ? S.links : classified.map((l) => ({ ...l, status: l.ok ? "ready" : "bad" }));
@@ -506,7 +507,7 @@ function renderQueue() {
   $("summary").innerHTML = sum;
   $("qAside").textContent = run ? "ход запуска" : "по одной в строке";
 
-  $("linkList").innerHTML = items.map((l) => {
+  const listHtml = items.map((l) => {
     const src = SRC[l.source] || ["none", "?"];
     let st = icon("ring"), res = "";
     if (l.status === "running") st = icon("run", "spin");
@@ -530,8 +531,17 @@ function renderQueue() {
       <span class="res">${res}</span>
     </li>`;
   }).join("");
-  const cur = $("linkList").querySelector(".link.running");
-  if (cur && run) cur.scrollIntoView({ block: "nearest" });
+  if (listHtml === lastQueue) return;  // ничего не изменилось — не трогаем DOM
+  lastQueue = listHtml;
+  const list = $("linkList");
+  list.innerHTML = listHtml;
+  // прокручиваем только сам список к текущей ссылке, страницу не двигаем
+  const cur = list.querySelector(".link.running");
+  if (cur && run) {
+    const top = cur.offsetTop, bottom = top + cur.offsetHeight;
+    if (top < list.scrollTop) list.scrollTop = top;
+    else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
+  }
 }
 
 /* ---------- actions ---------- */
@@ -624,7 +634,12 @@ async function refresh() {
   let s;
   try { s = await (await fetch(`/status?since=${seq}`)).json(); } catch (e) { return; }
   const key = s.started_at || "";
-  if (key !== runKey || s.seq < seq) { records = []; seq = 0; runKey = key; if (s.seq && s.records.length === 0) return refresh(); }
+  if (key !== runKey || s.seq < seq) {
+    // новый запуск: ответ запрошен с номером от старого, поэтому перезапрашиваем ленту с нуля
+    const refetch = seq > 0;
+    records = []; seq = 0; runKey = key;
+    if (refetch) return refresh();
+  }
   if (s.records && s.records.length) {
     s.records.forEach((r) => freshIds.add(r.id));
     records = records.concat(s.records);

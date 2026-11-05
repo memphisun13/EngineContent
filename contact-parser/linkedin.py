@@ -106,7 +106,16 @@ def check_page(url: str, html: str) -> None:
     if path.startswith(("/login", "/authwall", "/uas/login", "/signup")) or 'name="session_key"' in html:
         raise StopRun("Вы не залогинены в LinkedIn. Нажмите «Войти» вверху страницы (или выполните `python main.py --login`), "
                       "войдите и повторите запуск.")
-    text = BeautifulSoup(html, "html.parser").get_text(" ")[:20000]
+    soup = BeautifulSoup(html, "html.parser")
+    # «commercial use limit» — баннер поиска, ищем по всей странице
+    full_text = soup.get_text(" ")
+    if re.search(r"commercial use limit", full_text, re.I):
+        raise StopRun("LinkedIn сообщил о лимите поиска (commercial use limit). Запуск остановлен — "
+                      "продолжайте не раньше следующего месяца или сократите поиск.")
+    # остальные фразы ищем вне контента профилей и постов, чтобы текст чужого «About» не остановил запуск
+    for el in soup.select("main section, main article, main li"):
+        el.decompose()
+    text = soup.get_text(" ")[:20000]
     m = WARNING_RE.search(text)
     if m:
         raise StopRun(f"LinkedIn показал предупреждение («{m.group(0)}»). Запуск остановлен, чтобы не рисковать аккаунтом.")
@@ -223,7 +232,7 @@ def parse_people_cards(html: str, default_company: str = "") -> list[Person]:
 
 
 CURRENT_COMPANY_RE = re.compile(
-    r"(?:current company|поточна компанія|текущая компания|company)\s*:\s*(.+?)(?:\.\s|$)", re.I)
+    r"^(?:current company|поточна компанія|текущая компания)\s*:\s*(.+?)(?:\.\s|$)", re.I)
 
 
 def parse_profile(html: str, url: str) -> Person:

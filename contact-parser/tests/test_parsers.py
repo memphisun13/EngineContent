@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import dou  # noqa: E402
 import linkedin  # noqa: E402
 from common import Person, StopRun, normalize_url, split_headline, split_name  # noqa: E402
-from runner import detect, read_links  # noqa: E402
+from runner import describe, detect, read_links  # noqa: E402
 from sheets import CsvStore  # noqa: E402
 
 DOU_COMPANY = """
@@ -81,11 +81,15 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(split_name("Anna Maria Lee"), ("Anna", "Maria Lee"))
         self.assertEqual(split_name("Олена 🚀"), ("Олена", ""))
         self.assertEqual(split_name(""), ("", ""))
+        self.assertEqual(split_name("Olena (Lena) Koval"), ("Olena", "Koval"))
+        self.assertEqual(split_name("Ivan Petrenko [he/him], PMP"), ("Ivan", "Petrenko"))
 
     def test_split_headline(self):
         self.assertEqual(split_headline("CEO at Acme | Investor"), ("CEO", "Acme"))
         self.assertEqual(split_headline("CTO @ SoftServe"), ("CTO", "SoftServe"))
         self.assertEqual(split_headline("Recruiter"), ("Recruiter", ""))
+        self.assertEqual(split_headline("CEO в компании Acme"), ("CEO", "Acme"))
+        self.assertEqual(split_headline("Software Engineer in Kyiv"), ("Software Engineer in Kyiv", ""))
 
     def test_normalize(self):
         self.assertEqual(normalize_url("https://www.linkedin.com/in/Jane-Doe?x=1"),
@@ -106,6 +110,12 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(detect("https://linkedin.com/in/jane/"), ("linkedin", "person"))
         self.assertIsNone(detect("https://example.com/"))
         self.assertIsNone(detect("https://www.linkedin.com/feed/"))
+
+    def test_describe(self):
+        d = describe("https://www.linkedin.com/company/acme/people/")
+        self.assertEqual((d["ok"], d["source"], d["label"]), (True, "linkedin", "компания + люди"))
+        self.assertFalse(describe("https://www.linkedin.com/feed/")["ok"])
+        self.assertIn("не dou.ua", describe("https://example.com/")["reason"])
 
     def test_read_links(self):
         self.assertEqual(read_links("\n# c\nhttps://a.ua/\n jobs.dou.ua/x \nhttps://a.ua/\n"),
@@ -175,6 +185,32 @@ class TestLinkedIn(unittest.TestCase):
         with self.assertRaises(StopRun):
             linkedin.check_page("https://www.linkedin.com/feed/", "<p>Let's do a quick security check</p>")
         linkedin.check_page("https://www.linkedin.com/in/x/", LI_PROFILE)  # без исключения
+        # фраза из чужого профиля не должна останавливать запуск
+        bio = "<main><h1>Anna</h1><section><p>I detect unusual activity in payments</p></section></main>"
+        linkedin.check_page("https://www.linkedin.com/in/anna/", bio)
+        with self.assertRaises(StopRun):
+            linkedin.check_page("https://www.linkedin.com/search/results/people/",
+                                "<main><section>You've reached the commercial use limit on search</section></main>")
+
+    def test_profile_ignores_other_company_labels(self):
+        html = LI_PROFILE.replace("<button aria-label=\"Current", "<button aria-label=\"Follow company: Google\"></button>"
+                                  "<button aria-label=\"Current")
+        self.assertEqual(linkedin.parse_profile(html, "https://www.linkedin.com/in/m/").company, "Acme Corp")
+
+    def test_session_info(self):
+        import sqlite3
+        import time
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(linkedin.session_info(d)["status"], "out")
+            db = Path(d) / "Default" / "Network"
+            db.mkdir(parents=True)
+            con = sqlite3.connect(db / "Cookies")
+            con.execute("CREATE TABLE cookies (host_key TEXT, name TEXT, expires_utc INTEGER)")
+            future = int((time.time() + 11644473600 + 86400 * 30) * 1e6)
+            con.execute("INSERT INTO cookies VALUES ('.www.linkedin.com', 'li_at', ?)", (future,))
+            con.commit()
+            con.close()
+            self.assertEqual(linkedin.session_info(d)["status"], "in")
 
 
 class TestStore(unittest.TestCase):
