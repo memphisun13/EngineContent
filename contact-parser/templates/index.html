@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%2350e3c2%22/%3E%3Cg fill=%22none%22 stroke=%22%23113%22 stroke-width=%222.6%22 stroke-linecap=%22round%22%3E%3Ccircle cx=%229%22 cy=%2210%22 r=%222.4%22/%3E%3Ccircle cx=%229%22 cy=%2222%22 r=%222.4%22/%3E%3Cpath d=%22M12 10h3a3 3 0 0 1 3 3v6a3 3 0 0 0 3 3h3M12 22h3%22/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg: oklch(0.15 0.012 255);
@@ -32,8 +32,8 @@
   --li-soft: oklch(0.76 0.12 245 / 0.14);
   --dou: oklch(0.78 0.12 305);
   --dou-soft: oklch(0.78 0.12 305 / 0.14);
-  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: "Onest", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --r: 10px;
   --shadow: 0 1px 0 oklch(1 0 0 / 0.03) inset, 0 12px 32px -18px oklch(0 0 0 / 0.7);
   color-scheme: dark;
@@ -149,7 +149,7 @@ textarea:disabled { opacity: .55; }
 .tag.li { background: var(--li-soft); color: var(--li); }
 .tag.dou { background: var(--dou-soft); color: var(--dou); }
 .tag.bad { background: var(--err-soft); color: var(--err); }
-.src { font: 600 10.5px/1 var(--mono); letter-spacing: .02em; padding: 4px 6px; border-radius: 5px; flex: none; }
+.src { font: 600 11px/1 var(--mono); letter-spacing: .02em; padding: 4px 7px; border-radius: 5px; flex: none; }
 .src.linkedin { background: var(--li-soft); color: var(--li); }
 .src.dou { background: var(--dou-soft); color: var(--dou); }
 .src.none { background: var(--err-soft); color: var(--err); }
@@ -215,9 +215,9 @@ textarea:disabled { opacity: .55; }
 .wait-track { flex: 1; height: 3px; border-radius: 3px; background: var(--panel-3); overflow: hidden; }
 .wait-fill { height: 100%; background: var(--warn); transform-origin: left; }
 
-.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 16px; border-top: 1px solid var(--line-soft); }
-.metric { padding: 14px 0 0; }
-.metric + .metric { padding-left: 16px; border-left: 1px solid var(--line-soft); }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 32px; margin-top: 6px; }
+.metric { padding: 14px 0 0; position: relative; }
+.metric + .metric::before { content: ""; position: absolute; left: -16px; top: 14px; bottom: 0; width: 1px; background: var(--line-soft); }
 .metric .v { font: 500 24px/1.1 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 .metric .v small { font-size: 14px; color: var(--faint); }
 .metric .l { color: var(--muted); font-size: 12.5px; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
@@ -241,7 +241,7 @@ textarea:disabled { opacity: .55; }
 .seg-ctl { display: inline-flex; padding: 3px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line-soft); }
 .seg-ctl button { border: 0; background: none; color: var(--muted); font: 600 12.5px var(--sans); padding: 5px 11px; border-radius: 6px; cursor: pointer; }
 .seg-ctl button[aria-pressed="true"] { background: var(--panel-3); color: var(--text); }
-.tab-body { height: 460px; overflow: auto; }
+.tab-body { height: 460px; overflow: auto; padding-bottom: 12px; }
 
 table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13px; }
 th { position: sticky; top: 0; z-index: 1; background: var(--panel); text-align: left; font-weight: 500; color: var(--faint);
@@ -291,8 +291,9 @@ tr.fresh td { animation: fresh 2.4s cubic-bezier(.16, 1, .3, 1); }
   .session .sub { display: none; }
   .top-right > .btn:last-child { flex: 1; }
   .metrics { grid-template-columns: 1fr 1fr; }
-  .metric:nth-child(3) { padding-left: 0; border-left: 0; }
-  .metric:nth-child(n+3) { margin-top: 14px; border-top: 1px solid var(--line-soft); }
+  .metric + .metric::before { display: none; }
+  .metrics { row-gap: 0; }
+  .metric:nth-child(n+3) { margin-top: 16px; }
   .times { margin-left: 0; width: 100%; }
   .tabs-head { flex-wrap: wrap; }
   .tabs-tools { width: 100%; margin-left: 0; padding: 4px 0 8px; }
